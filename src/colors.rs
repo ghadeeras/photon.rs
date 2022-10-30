@@ -1,4 +1,5 @@
-use std::ops::{Add, AddAssign, Div, Mul};
+use std::ops::{Add, AddAssign, Div, Mul, MulAssign};
+
 use image::Rgb;
 
 #[derive(PartialEq, Copy, Clone, Debug)]
@@ -12,8 +13,8 @@ impl Color {
         Self::new(0.0, 0.0, 0.0)
     }
 
-    pub fn new(x: f64, y: f64, z: f64) -> Self {
-        Color { components: [x, y, z] }
+    pub fn new(red: f64, green: f64, blue: f64) -> Self {
+        Self { components: [red, green, blue] }
     }
 
     pub fn red(&self) -> f64 {
@@ -28,13 +29,17 @@ impl Color {
         self.components[2]
     }
 
-    pub fn saturated(&self) -> Color {
+    pub fn saturated(&self) -> Self {
         let max = self.red().max(self.green()).max(self.blue());
         if max <= 1.0 { *self } else { self / max }
     }
 
-    pub fn corrected(&self) -> Color {
-        Color { components: self.components.map(|c| c.sqrt()) }
+    pub fn corrected(&self) -> Self {
+        Color::new(
+            self.components[0].sqrt(),
+            self.components[1].sqrt(),
+            self.components[2].sqrt(),
+        )
     }
 
     pub fn as_rgb(&self) -> Rgb<u8> {
@@ -66,7 +71,7 @@ impl Add for &Color {
     type Output = Color;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Color::new(
+        Self::Output::new(
             self.red() + rhs.red(),
             self.green() + rhs.green(),
             self.blue() + rhs.blue(),
@@ -85,12 +90,22 @@ impl Add for Color {
 
 }
 
+impl MulAssign<f64> for Color {
+
+    fn mul_assign(&mut self, rhs: f64) {
+        self.components[0] *= rhs;
+        self.components[1] *= rhs;
+        self.components[2] *= rhs;
+    }
+
+}
+
 impl Mul<f64> for &Color {
 
     type Output = Color;
 
     fn mul(self, rhs: f64) -> Self::Output {
-        Color::new(
+        Self::Output::new(
             self.red() * rhs,
             self.green() * rhs,
             self.blue() * rhs,

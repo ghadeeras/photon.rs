@@ -1,5 +1,6 @@
 use rand::{Rng, thread_rng};
 use rand::prelude::Distribution;
+
 use crate::{Color, Ray, Vec3D, World};
 use crate::images::Image;
 use crate::sampling::{UniformSolidUnitCircle, UniformSolidUnitSquare};
@@ -9,39 +10,56 @@ pub struct Camera {
     pub sensor: Sensor,
     pub exposure: Exposure,
     pub samples_per_pixel: u16,
+
+    gain: f64
 }
 
 impl Camera {
 
-    fn pixel(&self, x: u16, y: u16) -> CameraPixel {
+    pub fn new(lens: Lens, sensor: Sensor, exposure: Exposure, samples_per_pixel: u16) -> Self {
+        let gain = sensor.gain / (samples_per_pixel as f64);
+        Self { lens, sensor, exposure, samples_per_pixel, gain }
+    }
+
+    pub fn shoot<W: World>(&self, world: &W) -> Image {
+        let width = self.sensor.width;
+        let height = self.sensor.height;
+        let mut image = Image::new(width, height);
+        for (j, row) in image.rows.iter_mut().enumerate() {
+            for (i, color) in row.pixels.iter_mut().enumerate() {
+                let pixel = self.pixel(i, j);
+                *color = pixel.estimate_color(world);
+            }
+        }
+        image
+    }
+
+    fn pixel(&self, x: usize, y: usize) -> CameraPixel {
         CameraPixel {
             camera: self,
             pixel: self.sensor.pixel(x, y)
         }
     }
 
-    pub fn shoot<T: World>(&self, world: &T) -> Image {
-        let mut image = Image::new(self.sensor.width, self.sensor.height);
-        for i in 0u16 .. self.sensor.width {
-            for j in 0u16 .. self.sensor.height {
-                let pixel = self.pixel(i, j);
-                let mut color = Color::black();
-                for _ in 0u16 .. self.samples_per_pixel {
-                    let ray = thread_rng().sample(&pixel);
-                    color += world.trace(&ray);
-                }
-                color = color.saturated().corrected();
-                image.set(i, j, &color);
-            }
-        }
-        image
-    }
-
 }
 
-pub struct CameraPixel<'a> {
+struct CameraPixel<'a> {
     camera: &'a Camera,
     pixel: Pixel
+}
+
+impl<'a> CameraPixel<'a> {
+
+    fn estimate_color<W: World>(&self, world: &W) -> Color {
+        let mut color = Color::black();
+        for _ in 0u16 .. self.camera.samples_per_pixel {
+            let ray = thread_rng().sample(self);
+            color += world.trace(&ray);
+        }
+        color *= self.camera.gain;
+        color.saturated().corrected()
+    }
+
 }
 
 impl<'a> Distribution<Ray> for CameraPixel<'a> {
@@ -52,9 +70,9 @@ impl<'a> Distribution<Ray> for CameraPixel<'a> {
         let time = rng.sample(&self.camera.exposure);
 
         let teleported_pixel_sample = Vec3D::new(pixel_sample.x(), pixel_sample.y(), -self.camera.lens.focal_length);
-        let focal_plane_sample = &teleported_pixel_sample * self.camera.lens.projection_ratio();
-        let direction = (&focal_plane_sample - &lens_sample).unit();
-        Ray { origin: lens_sample, direction, time }
+        let focal_plane_sample = &teleported_pixel_sample * self.camera.lens.projection_ratio;
+        let direction = &focal_plane_sample - &lens_sample;
+        Ray::new(lens_sample, direction, time)
     }
 
 }
@@ -82,19 +100,15 @@ impl Lens {
         }
     }
 
-    pub fn projection_ratio(&self) -> f64 {
-        self.projection_ratio
-    }
-
 }
 
 impl Distribution<Vec3D> for Lens {
 
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Vec3D {
-        if self.aperture == 0.0 {
-            Vec3D::zero()
-        } else {
+        if self.aperture != 0.0 {
             self.aperture * rng.sample(UniformSolidUnitCircle)
+        } else {
+            Vec3D::zero()
         }
     }
 
@@ -121,26 +135,19 @@ impl Sensor {
         }
     }
 
-    pub fn aspect(&self) -> f64 {
-        self.aspect
-    }
-
-    pub fn pixel_size(&self) -> f64 {
-        self.pixel_size
-    }
-
-    fn pixel(&self, x: u16, y: u16) -> Pixel {
-        let size = self.pixel_size();
+    fn pixel(&self, x: usize, y: usize) -> Pixel {
+        let size = self.pixel_size;
+        let aspect = self.aspect;
         Pixel {
-            x: ((x % self.width) as f64) * size - self.aspect(),
-            y: 1.0 - ((y % self.height) as f64) * size,
+            x: (x as f64) * size - aspect,
+            y: 1.0 - (y as f64) * size,
             size,
         }
     }
 
 }
 
-pub struct Pixel {
+struct Pixel {
     pub x: f64,
     pub y: f64,
     pub size: f64,
@@ -160,7 +167,7 @@ impl Distribution<f64> for Exposure {
 
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> f64 {
         let &Exposure(e) = self;
-        if e == 0.0 { 0.0 } else { -e * rng.gen::<f64>() }
+        if e != 0.0 { -e * rng.gen::<f64>() } else { 0.0 }
     }
 
 }

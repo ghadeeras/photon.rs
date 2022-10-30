@@ -1,9 +1,10 @@
-use image::ImageBuffer;
+use image::{ImageBuffer, Rgb};
+
 use crate::Color;
 
 pub struct Image {
 
-    rows: Vec<ImageRow>,
+    pub rows: Vec<ImageRow>,
     width: u16,
     height: u16,
 
@@ -11,8 +12,8 @@ pub struct Image {
 
 impl Image {
 
-    pub fn new(width: u16, height: u16) -> Image {
-        let mut image = Image {
+    pub fn new(width: u16, height: u16) -> Self {
+        let mut image = Self {
             rows: vec![],
             width,
             height
@@ -23,22 +24,10 @@ impl Image {
         image
     }
 
-    pub fn get(&self, x: u16, y: u16) -> Color {
-        self.rows.get(y as usize).map(|r| r.get(x)).unwrap_or(Color::black())
-    }
-
-    pub fn set(&mut self, x: u16, y: u16, color: &Color) {
-        for row in self.rows.get_mut(y as usize) {
-            row.set(x, color)
-        }
-    }
-
     pub fn save(&self, file: &str) {
         let mut buffer = ImageBuffer::new(self.width as u32, self.height as u32);
-        for i in 0 .. self.width {
-            for j in 0 .. self.height {
-                buffer.put_pixel(i as u32, j as u32, self.get(i, j).as_rgb())
-            }
+        for (j, row) in self.rows.iter().enumerate() {
+            row.write_to(&mut buffer, j as u32)
         }
         buffer.save(file).unwrap_or(());
     }
@@ -47,27 +36,23 @@ impl Image {
 
 pub struct ImageRow {
 
-    pixels: Vec<Color>
+    pub pixels: Vec<Color>
 
 }
 
 impl ImageRow {
 
-    fn new(width: u16) -> ImageRow {
-        let mut row = ImageRow { pixels: vec![] };
+    fn new(width: u16) -> Self {
+        let mut row = Self { pixels: vec![] };
         for _ in 0u16 .. width {
             row.pixels.push(Color::black())
         }
         row
     }
 
-    fn get(&self, x: u16) -> Color {
-        self.pixels.get(x as usize).copied().unwrap_or(Color::black())
-    }
-
-    fn set(&mut self, x: u16, color: &Color) {
-        for pixel in self.pixels.get_mut(x as usize) {
-            pixel.components = color.components
+    fn write_to(&self, buffer: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, j: u32) {
+        for (i, pixel) in self.pixels.iter().enumerate() {
+            buffer.put_pixel(i as u32, j, pixel.as_rgb())
         }
     }
 

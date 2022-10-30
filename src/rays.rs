@@ -1,6 +1,6 @@
 use crate::Vec3D;
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(Clone)]
 pub struct Ray {
     pub origin: Vec3D,
     pub direction: Vec3D,
@@ -10,7 +10,7 @@ pub struct Ray {
 impl Ray {
 
     pub fn new(origin: Vec3D, direction: Vec3D, time: f64) -> Self {
-        Ray { origin, direction, time }
+        Self { origin, direction, time }
     }
 
     pub fn at(&self, distance: f64) -> Vec3D {

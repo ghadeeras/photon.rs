@@ -41,7 +41,7 @@ impl Vec3D {
         self.components[2]
     }
 
-    pub fn unit(&self) -> Vec3D {
+    pub fn unit(&self) -> Self {
         self / self.length()
     }
 
@@ -68,7 +68,7 @@ impl Add for &Vec3D {
     type Output = Vec3D;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Vec3D::new(
+        Self::Output::new(
             self.x() + rhs.x(),
             self.y() + rhs.y(),
             self.z() + rhs.z(),
@@ -92,7 +92,7 @@ impl Sub for &Vec3D {
     type Output = Vec3D;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Vec3D::new(
+        Self::Output::new(
             self.x() - rhs.x(),
             self.y() - rhs.y(),
             self.z() - rhs.z(),
@@ -116,7 +116,7 @@ impl Neg for &Vec3D {
     type Output = Vec3D;
 
     fn neg(self) -> Self::Output {
-        Vec3D::new(
+        Self::Output::new(
             -self.x(),
             -self.y(),
             -self.z(),
@@ -140,7 +140,7 @@ impl Mul<f64> for &Vec3D {
     type Output = Vec3D;
 
     fn mul(self, rhs: f64) -> Self::Output {
-        Vec3D::new(
+        Self::Output::new(
             self.x() * rhs,
             self.y() * rhs,
             self.z() * rhs,
