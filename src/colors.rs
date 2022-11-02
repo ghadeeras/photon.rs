@@ -10,7 +10,15 @@ pub struct Color {
 impl Color {
 
     pub fn black() -> Self {
-        Self::new(0.0, 0.0, 0.0)
+        Self::grey(0.0)
+    }
+
+    pub fn white() -> Self {
+        Self::grey(1.0)
+    }
+
+    pub fn grey(shade: f64) -> Self {
+        Self::new(shade, shade, shade)
     }
 
     pub fn new(red: f64, green: f64, blue: f64) -> Self {
@@ -96,6 +104,24 @@ impl MulAssign<f64> for Color {
         self.components[0] *= rhs;
         self.components[1] *= rhs;
         self.components[2] *= rhs;
+    }
+
+}
+
+impl MulAssign<&Color> for Color {
+
+    fn mul_assign(&mut self, rhs: &Color) {
+        self.components[0] *= rhs.components[0];
+        self.components[1] *= rhs.components[1];
+        self.components[2] *= rhs.components[2];
+    }
+
+}
+
+impl MulAssign<Color> for Color {
+
+    fn mul_assign(&mut self, rhs: Color) {
+        *self *= &rhs;
     }
 
 }

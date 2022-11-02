@@ -10,7 +10,7 @@ pub trait Geometry {
     fn shoot(&self, ray: &Ray, min: f64, max: f64) -> Option<Hit>;
 
     fn surface_coordinates(&self, point: &Vec3D) -> Vec3D {
-        return *point;
+        *point
     }
 
 }

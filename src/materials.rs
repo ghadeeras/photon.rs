@@ -1,11 +1,6 @@
 use crate::Color;
+use crate::brdfs::{BRDF, Lambertian};
 use crate::geometries::Hit;
-use crate::textures::Texture;
-use crate::things::MaterialHit;
-
-pub enum Effect {
-    Emission(Color)
-}
 
 pub trait Material {
 
@@ -13,7 +8,16 @@ pub trait Material {
 
 }
 
+pub enum Effect {
+    Emission(Color),
+    Scattering {
+        color: Color,
+        brdf: Box<dyn BRDF>
+    }
+}
+
 pub struct Emissive(pub Color);
+pub struct Diffusive(pub Color);
 
 impl Material for Emissive {
 
@@ -24,10 +28,14 @@ impl Material for Emissive {
 
 }
 
-impl<M: Material> Texture for M {
+impl Material for Diffusive {
 
-    fn material(&self, _: &MaterialHit) -> &dyn Material {
-        self
+    fn effect_of(&self, hit: &Hit) -> Effect {
+        let Self(ref color) = self;
+        Effect::Scattering {
+            color: *color,
+            brdf: Box::new(Lambertian::new(&hit.normal))
+        }
     }
 
 }

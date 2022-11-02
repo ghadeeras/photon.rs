@@ -45,6 +45,27 @@ impl Vec3D {
         self / self.length()
     }
 
+    pub fn cross(&self, rhs: &Vec3D) -> Vec3D {
+        Vec3D::new(
+            self.y() * rhs.z() - self.z() * rhs.y(),
+            self.z() * rhs.x() - self.x() * rhs.z(),
+            self.x() * rhs.y() - self.y() * rhs.x(),
+        )
+    }
+
+    pub fn reject(&self, rhs: &Vec3D, rhs_normalized: bool) -> Vec3D {
+        self - &self.project_on(rhs, rhs_normalized)
+    }
+
+    pub fn project_on(&self, rhs: &Vec3D, rhs_normalized: bool) -> Vec3D {
+        let unit_rhs = if rhs_normalized {
+            *rhs
+        } else {
+            rhs.unit()
+        };
+        unit_rhs * self.dot(&unit_rhs)
+    }
+
 }
 
 impl Dot for &Vec3D {
