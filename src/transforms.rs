@@ -23,7 +23,7 @@ impl Transformation for Translation {
 
     fn to_global(&self, hit: &Hit) -> Hit {
         let &Translation(ref shift) = self;
-        let ray = Ray::new(&hit.incident_ray.origin - shift, hit.incident_ray.direction, hit.incident_ray.time);
+        let ray = Ray::new(&hit.incident_ray.origin + shift, hit.incident_ray.direction, hit.incident_ray.time);
         hit.local_hit().transformed_as(ray, hit.normal)
     }
 

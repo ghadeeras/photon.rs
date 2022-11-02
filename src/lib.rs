@@ -6,7 +6,7 @@ use crate::geometries::{Sphere, Transformed};
 use crate::materials::Diffusive;
 use crate::rays::Ray;
 use crate::textures::Constant;
-use crate::things::AtomicThing;
+use crate::things::{AtomicThing, Things};
 use crate::transforms::Translation;
 use crate::vectors::Vec3D;
 use crate::worlds::{PathTraced, World};
@@ -31,7 +31,8 @@ struct Sky;
 impl World for Sky {
 
     fn trace(&self, ray: &Ray) -> Color {
-        let b = (ray.direction.unit().y() + 1.0) * 0.5;
+        let mut b = (ray.direction.unit().y() + 1.0) * 0.5;
+        b *= b;
         Color::new(b, b, b)
     }
 
@@ -47,13 +48,22 @@ fn test() {
     );
     let world = PathTraced {
         sky: Rc::new(Sky),
-        thing: Rc::new(AtomicThing {
-            geometry: Rc::new(Transformed {
-                geometry: Rc::new(Sphere),
-                transformation: Rc::new(Translation(Vec3D::new(0.0, 0.0, -4.0)))
+        thing: Rc::new(Things(vec![
+            Rc::new(AtomicThing {
+                geometry: Rc::new(Transformed {
+                    geometry: Rc::new(Sphere),
+                    transformation: Rc::new(Translation(Vec3D::new(0.0, 1.0, -4.0)))
+                }),
+                texture: Rc::new(Constant(Rc::new(Diffusive(Color::new(0.8, 0.3, 0.2)))))
             }),
-            texture: Rc::new(Constant(Rc::new(Diffusive(Color::new(1.0, 0.0, 1.0)))))
-        }),
+            Rc::new(AtomicThing {
+                geometry: Rc::new(Transformed {
+                    geometry: Rc::new(Sphere),
+                    transformation: Rc::new(Translation(Vec3D::new(0.0, -1.0, -4.0)))
+                }),
+                texture: Rc::new(Constant(Rc::new(Diffusive(Color::new(0.2, 0.4, 0.8)))))
+            }),
+        ])),
         depth: 16
     };
     let time = std::time::SystemTime::now();
