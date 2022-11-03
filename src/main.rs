@@ -38,8 +38,7 @@ impl World for Sky {
 
 }
 
-#[test]
-fn test() {
+fn main() {
     let camera = Camera::new(
         Lens::ideal(1.0),
         Sensor::new(960, 720, 1.0),
