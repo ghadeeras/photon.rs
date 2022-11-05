@@ -2,8 +2,8 @@ use std::rc::Rc;
 
 use crate::cameras::{Camera, Exposure, Lens, Sensor};
 use crate::colors::Color;
-use crate::geometries::{Sphere, Transformed};
-use crate::materials::Diffusive;
+use crate::geometries::{GeometryWrapper, Sphere};
+use crate::materials::{Diffusive, WrappedMaterial};
 use crate::rays::Ray;
 use crate::textures::Constant;
 use crate::things::{AtomicThing, Things};
@@ -48,20 +48,12 @@ fn main() {
     let world = PathTraced {
         sky: Rc::new(Sky),
         thing: Rc::new(Things(vec![
-            Rc::new(AtomicThing {
-                geometry: Rc::new(Transformed {
-                    geometry: Rc::new(Sphere),
-                    transformation: Rc::new(Translation(Vec3D::new(0.0, 1.0, -4.0)))
-                }),
-                texture: Rc::new(Constant(Rc::new(Diffusive(Color::new(0.8, 0.3, 0.2)))))
-            }),
-            Rc::new(AtomicThing {
-                geometry: Rc::new(Transformed {
-                    geometry: Rc::new(Sphere),
-                    transformation: Rc::new(Translation(Vec3D::new(0.0, -1.0, -4.0)))
-                }),
-                texture: Rc::new(Constant(Rc::new(Diffusive(Color::new(0.2, 0.4, 0.8)))))
-            }),
+            Rc::new(Sphere)
+                .with_transformation(Translation(Vec3D::new(0.0, 1.0, -4.0)))
+                .with_texture(Rc::new(Diffusive(Color::new(0.8, 0.3, 0.2))).as_texture()),
+            Rc::new(Sphere)
+                .with_transformation(Translation(Vec3D::new(0.0, -1.0, -4.0)))
+                .with_texture(Rc::new(Diffusive(Color::new(0.2, 0.4, 0.8))).as_texture()),
         ])),
         depth: 16
     };

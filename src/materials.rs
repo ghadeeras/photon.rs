@@ -1,10 +1,30 @@
-use crate::Color;
+use std::rc::Rc;
+
+use crate::{Color, Constant};
 use crate::brdfs::{BRDF, Lambertian};
 use crate::geometries::Hit;
 
 pub trait Material {
 
     fn effect_of(&self, hit: &Hit) -> Effect;
+
+}
+
+pub trait WrappedMaterial<M: Material> {
+
+    fn as_texture_ref(&self) -> Rc<Constant<M>> {
+        Rc::new(self.as_texture())
+    }
+
+    fn as_texture(&self) -> Constant<M>;
+
+}
+
+impl<M: Material> WrappedMaterial<M> for Rc<M> {
+
+    fn as_texture(&self) -> Constant<M> {
+        Constant(self.clone())
+    }
 
 }
 

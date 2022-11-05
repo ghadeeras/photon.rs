@@ -12,25 +12,27 @@ pub trait Thing {
 
 pub struct MaterialHit<'a> {
     pub hit: Hit,
-    pub thing: &'a AtomicThing
+    pub geometry: &'a dyn Geometry,
+    pub texture: &'a dyn Texture
 }
 
-pub struct AtomicThing {
+pub struct AtomicThing<G: Geometry, T: Texture> {
 
-    pub geometry: Rc<dyn Geometry>,
-    pub texture: Rc<dyn Texture>
+    pub geometry: Rc<G>,
+    pub texture: Rc<T>
 
 }
 
 pub struct Things(pub Vec<Rc<dyn Thing>>);
 
-impl Thing for AtomicThing {
+impl<G: Geometry, T: Texture> Thing for AtomicThing<G, T> {
 
     fn shoot(&self, ray: &Ray, min: f64, max: f64) -> Option<MaterialHit> {
         match self.geometry.shoot(ray, min, max) {
             Some(ref hit) => Some(MaterialHit {
                 hit: hit.clone(),
-                thing: self
+                geometry: self.geometry.as_ref(),
+                texture: self.texture.as_ref(),
             }),
             None => None
         }

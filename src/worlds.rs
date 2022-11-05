@@ -20,15 +20,15 @@ impl World for PitchBlack {
 
 }
 
-pub struct PathTraced {
+pub struct PathTraced<W: World, T: Thing> {
 
-    pub sky: Rc<dyn World>,
-    pub thing: Rc<dyn Thing>,
+    pub sky: Rc<W>,
+    pub thing: Rc<T>,
     pub depth: u8,
 
 }
 
-impl World for PathTraced {
+impl<W: World, T: Thing> World for PathTraced<W, T> {
 
     fn trace(&self, ray: &Ray) -> Color {
         let mut r = ray.clone();
@@ -37,7 +37,7 @@ impl World for PathTraced {
         while depth > 0 {
             match self.thing.shoot(&r, 0.0001, f64::INFINITY) {
                 Some(ref hit) => {
-                    match hit.thing.texture.material(hit).effect_of(&hit.hit) {
+                    match hit.texture.material(&hit.hit, hit.geometry).effect_of(&hit.hit) {
                         Effect::Emission(ref c) => {
                             color = *c;
                             depth = 0;

@@ -1,7 +1,8 @@
 use std::f64::consts::PI;
 use std::rc::Rc;
 
-use crate::{Ray, Vec3D};
+use crate::{AtomicThing, Ray, Vec3D};
+use crate::textures::Texture;
 use crate::transforms::Transformation;
 use crate::vectors::Dot;
 
@@ -11,6 +12,40 @@ pub trait Geometry {
 
     fn surface_coordinates(&self, point: &Vec3D) -> Vec3D {
         *point
+    }
+
+}
+
+pub trait GeometryWrapper<G: Geometry> {
+
+    fn with_texture<T: Texture>(&self, texture: T) -> Rc<AtomicThing<G, T>> {
+        self.with_texture_ref(Rc::new(texture))
+    }
+
+    fn with_transformation<T: Transformation>(&self, transformation: T) -> Rc<Transformed<G, T>> {
+        self.with_transformation_ref(Rc::new(transformation))
+    }
+
+    fn with_texture_ref<T: Texture>(&self, texture: Rc<T>) -> Rc<AtomicThing<G, T>>;
+
+    fn with_transformation_ref<T: Transformation>(&self, transformation: Rc<T>) -> Rc<Transformed<G, T>>;
+
+}
+
+impl<G: Geometry> GeometryWrapper<G> for Rc<G> {
+
+    fn with_texture_ref<T: Texture>(&self, texture: Rc<T>) -> Rc<AtomicThing<G, T>> {
+        Rc::new(AtomicThing {
+            geometry: self.clone(),
+            texture: texture.clone()
+        })
+    }
+
+    fn with_transformation_ref<T: Transformation>(&self, transformation: Rc<T>) -> Rc<Transformed<G, T>> {
+        Rc::new(Transformed {
+            geometry: self.clone(),
+            transformation: transformation.clone()
+        })
     }
 
 }
@@ -45,12 +80,12 @@ impl Hit {
 
 }
 
-pub struct Transformed {
-    pub geometry: Rc<dyn Geometry>,
-    pub transformation: Rc<dyn Transformation>
+pub struct Transformed<G: Geometry, T: Transformation> {
+    pub geometry: Rc<G>,
+    pub transformation: Rc<T>
 }
 
-impl Geometry for Transformed {
+impl<G: Geometry, T: Transformation> Geometry for Transformed<G, T> {
 
     fn shoot(&self, ray: &Ray, min: f64, max: f64) -> Option<Hit> {
         self.geometry
