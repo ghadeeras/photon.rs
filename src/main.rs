@@ -64,7 +64,7 @@ fn main() {
         depth: 16
     };
     let time = std::time::SystemTime::now();
-    let image = camera.shoot(&world);
+    let image = camera.shoot(&world, 16);
     println!("{:?}", time.elapsed());
     image.save("_image.png");
 }

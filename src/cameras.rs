@@ -1,5 +1,8 @@
+use std::ops::Mul;
+
 use rand::{Rng, thread_rng};
 use rand::prelude::Distribution;
+use rayon::prelude::*;
 
 use crate::{Color, Ray, Vec3D, World};
 use crate::images::Image;
@@ -14,7 +17,18 @@ pub struct Camera {
 
 impl Camera {
 
-    pub fn shoot<W: World>(&self, world: &W) -> Image {
+    pub fn shoot<W: World>(&self, world: &W, stack_count: u8) -> Image {
+        let mut image = (0 .. stack_count).into_par_iter()
+            .map(|_| self.shoot_linear(world))
+            .reduce(|| Image::new(self.sensor.width, self.sensor.height), |i1, i2| {
+                i1.blend(&i2, |c1, c2| c1 + c2)
+            });
+        let ratio = 1.0 / (stack_count as f64);
+        image.update_pixels(&|c, _, _| c.mul(ratio).saturated().corrected());
+        image
+    }
+
+    fn shoot_linear<W: World>(&self, world: &W) -> Image {
         let width = self.sensor.width;
         let height = self.sensor.height;
         let gain = self.sensor.gain / (self.samples_per_pixel as f64);
@@ -50,8 +64,7 @@ impl<'a> CameraPixel<'a> {
             let ray = thread_rng().sample(self);
             color += world.trace(&ray);
         }
-        color *= gain;
-        color.saturated().corrected()
+        color * gain
     }
 
 }

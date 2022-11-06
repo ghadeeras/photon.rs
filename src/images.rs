@@ -13,11 +13,31 @@ pub struct Image {
 impl Image {
 
     pub fn new(width: u16, height: u16) -> Self {
+        Self::init(width, height, |_, _| Color::black())
+    }
+
+    pub fn init<F: Fn(usize, usize) -> Color>(width: u16, height: u16, initializer: F) -> Self {
         Self {
-            rows: (0u16 .. height).map(|_| ImageRow::new(width)).collect(),
+            rows: (0 .. height as usize).map(|j| ImageRow::init(width, |i| initializer(i, j))).collect(),
             width,
             height
         }
+    }
+
+    pub fn update_pixels(&mut self, mapper: &dyn Fn(Color, usize, usize) -> Color) {
+        for (j, row) in self.rows.iter_mut().enumerate() {
+            for (i, pixel) in row.pixels.iter_mut().enumerate() {
+                *pixel = mapper(*pixel, i, j)
+            }
+        }
+    }
+
+    pub fn blend<F: Fn(Color, Color) -> Color>(&self, image: &Image, blender: F) -> Self {
+        assert_eq!(self.width, image.width);
+        assert_eq!(self.height, image.height);
+        Self::init(self.width, self.height, |i, j| {
+            blender(self.rows[j].pixels[i], image.rows[j].pixels[i])
+        })
     }
 
     pub fn save(&self, file: &str) {
@@ -38,9 +58,9 @@ pub struct ImageRow {
 
 impl ImageRow {
 
-    fn new(width: u16) -> Self {
+    pub fn init<F: Fn(usize) -> Color>(width: u16, initializer: F) -> Self {
         Self {
-            pixels: (0u16 .. width).map(|_| Color::black()).collect()
+            pixels: (0 .. width as usize).map(initializer).collect()
         }
     }
 
