@@ -1,12 +1,20 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::{Color, Ray};
 use crate::materials::Effect;
 use crate::things::Thing;
 
-pub trait World {
+pub trait World: Send + Sync {
 
     fn trace(&self, ray: &Ray) -> Color;
+
+}
+
+impl<W: World> World for Arc<W> {
+
+    fn trace(&self, ray: &Ray) -> Color {
+        self.as_ref().trace(ray)
+    }
 
 }
 
@@ -22,8 +30,8 @@ impl World for PitchBlack {
 
 pub struct PathTraced<W: World, T: Thing> {
 
-    pub sky: Rc<W>,
-    pub thing: Rc<T>,
+    pub sky: W,
+    pub thing: T,
     pub depth: u8,
 
 }

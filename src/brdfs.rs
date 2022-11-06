@@ -1,5 +1,7 @@
 use std::f64::consts::PI;
+
 use rand::{Rng, thread_rng};
+
 use crate::matrices::Matrix;
 use crate::sampling::UniformSolidUnitSquare;
 use crate::Vec3D;

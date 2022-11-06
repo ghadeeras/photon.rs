@@ -1,29 +1,19 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
-use crate::{Color, Constant};
 use crate::brdfs::{BRDF, Lambertian};
+use crate::Color;
 use crate::geometries::Hit;
 
-pub trait Material {
+pub trait Material: Send + Sync {
 
     fn effect_of(&self, hit: &Hit) -> Effect;
 
 }
 
-pub trait WrappedMaterial<M: Material> {
+impl<M: Material> Material for Arc<M> {
 
-    fn as_texture_ref(&self) -> Rc<Constant<M>> {
-        Rc::new(self.as_texture())
-    }
-
-    fn as_texture(&self) -> Constant<M>;
-
-}
-
-impl<M: Material> WrappedMaterial<M> for Rc<M> {
-
-    fn as_texture(&self) -> Constant<M> {
-        Constant(self.clone())
+    fn effect_of(&self, hit: &Hit) -> Effect {
+        self.as_ref().effect_of(hit)
     }
 
 }

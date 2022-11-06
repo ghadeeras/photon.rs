@@ -1,9 +1,7 @@
-use std::rc::Rc;
-
 use crate::cameras::{Camera, Exposure, Lens, Sensor};
 use crate::colors::Color;
-use crate::geometries::{GeometryWrapper, Sphere};
-use crate::materials::{Diffusive, WrappedMaterial};
+use crate::geometries::{Sphere, Transformed};
+use crate::materials::Diffusive;
 use crate::rays::Ray;
 use crate::textures::Constant;
 use crate::things::{AtomicThing, Things};
@@ -39,22 +37,30 @@ impl World for Sky {
 }
 
 fn main() {
-    let camera = Camera::new(
-        Lens::ideal(1.0),
-        Sensor::new(960, 720, 1.0),
-        Exposure(0.0),
-        64
-    );
+    let camera = Camera {
+        lens: Lens::ideal(1.0),
+        sensor: Sensor::new(960, 720, 1.0),
+        exposure: Exposure(0.0),
+        samples_per_pixel: 64
+    };
     let world = PathTraced {
-        sky: Rc::new(Sky),
-        thing: Rc::new(Things(vec![
-            Rc::new(Sphere)
-                .with_transformation(Translation(Vec3D::new(0.0, 1.0, -4.0)))
-                .with_texture(Rc::new(Diffusive(Color::new(0.8, 0.3, 0.2))).as_texture()),
-            Rc::new(Sphere)
-                .with_transformation(Translation(Vec3D::new(0.0, -1.0, -4.0)))
-                .with_texture(Rc::new(Diffusive(Color::new(0.2, 0.4, 0.8))).as_texture()),
-        ])),
+        sky: Sky,
+        thing: Things(vec![
+            Box::new(AtomicThing {
+                geometry: Transformed {
+                    geometry: Sphere,
+                    transformation: Translation(Vec3D::new(0.0, 1.01, -4.0)),
+                },
+                texture: Constant(Diffusive(Color::new(0.8, 0.4, 0.2)))
+            }),
+            Box::new(AtomicThing {
+                geometry: Transformed {
+                    geometry: Sphere,
+                    transformation: Translation(Vec3D::new(0.0, -1.01, -4.0)),
+                },
+                texture: Constant(Diffusive(Color::new(0.2, 0.4, 0.8)))
+            }),
+        ]),
         depth: 16
     };
     let time = std::time::SystemTime::now();

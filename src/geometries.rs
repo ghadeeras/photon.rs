@@ -1,12 +1,12 @@
 use std::f64::consts::PI;
 use std::rc::Rc;
+use std::sync::Arc;
 
-use crate::{AtomicThing, Ray, Vec3D};
-use crate::textures::Texture;
+use crate::{Ray, Vec3D};
 use crate::transforms::Transformation;
 use crate::vectors::Dot;
 
-pub trait Geometry {
+pub trait Geometry: Send + Sync {
 
     fn shoot(&self, ray: &Ray, min: f64, max: f64) -> Option<Hit>;
 
@@ -16,36 +16,14 @@ pub trait Geometry {
 
 }
 
-pub trait GeometryWrapper<G: Geometry> {
+impl<G: Geometry> Geometry for Arc<G> {
 
-    fn with_texture<T: Texture>(&self, texture: T) -> Rc<AtomicThing<G, T>> {
-        self.with_texture_ref(Rc::new(texture))
+    fn shoot(&self, ray: &Ray, min: f64, max: f64) -> Option<Hit> {
+        self.as_ref().shoot(ray, min, max)
     }
 
-    fn with_transformation<T: Transformation>(&self, transformation: T) -> Rc<Transformed<G, T>> {
-        self.with_transformation_ref(Rc::new(transformation))
-    }
-
-    fn with_texture_ref<T: Texture>(&self, texture: Rc<T>) -> Rc<AtomicThing<G, T>>;
-
-    fn with_transformation_ref<T: Transformation>(&self, transformation: Rc<T>) -> Rc<Transformed<G, T>>;
-
-}
-
-impl<G: Geometry> GeometryWrapper<G> for Rc<G> {
-
-    fn with_texture_ref<T: Texture>(&self, texture: Rc<T>) -> Rc<AtomicThing<G, T>> {
-        Rc::new(AtomicThing {
-            geometry: self.clone(),
-            texture: texture.clone()
-        })
-    }
-
-    fn with_transformation_ref<T: Transformation>(&self, transformation: Rc<T>) -> Rc<Transformed<G, T>> {
-        Rc::new(Transformed {
-            geometry: self.clone(),
-            transformation: transformation.clone()
-        })
+    fn surface_coordinates(&self, point: &Vec3D) -> Vec3D {
+        self.as_ref().surface_coordinates(point)
     }
 
 }
@@ -57,7 +35,7 @@ pub struct Hit {
     pub normal: Vec3D,
     pub distance: f64,
 
-    local_hit: Option<Box<Hit>>
+    local_hit: Option<Rc<Hit>>
 
 }
 
@@ -71,18 +49,18 @@ impl Hit {
         Self { incident_ray, normal, distance: self.distance, local_hit: Some(self.local_hit()) }
     }
 
-    pub fn local_hit(&self) -> Box<Self> {
+    pub fn local_hit(&self) -> Rc<Self> {
         match self.local_hit {
             Some(ref hit) => hit.clone(),
-            _ => Box::new(Self::new(self.incident_ray.clone(), self.normal, self.distance))
+            _ => Rc::new(self.clone())
         }
     }
 
 }
 
 pub struct Transformed<G: Geometry, T: Transformation> {
-    pub geometry: Rc<G>,
-    pub transformation: Rc<T>
+    pub geometry: G,
+    pub transformation: T
 }
 
 impl<G: Geometry, T: Transformation> Geometry for Transformed<G, T> {

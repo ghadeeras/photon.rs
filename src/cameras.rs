@@ -10,25 +10,19 @@ pub struct Camera {
     pub sensor: Sensor,
     pub exposure: Exposure,
     pub samples_per_pixel: u16,
-
-    gain: f64
 }
 
 impl Camera {
 
-    pub fn new(lens: Lens, sensor: Sensor, exposure: Exposure, samples_per_pixel: u16) -> Self {
-        let gain = sensor.gain / (samples_per_pixel as f64);
-        Self { lens, sensor, exposure, samples_per_pixel, gain }
-    }
-
     pub fn shoot<W: World>(&self, world: &W) -> Image {
         let width = self.sensor.width;
         let height = self.sensor.height;
+        let gain = self.sensor.gain / (self.samples_per_pixel as f64);
         let mut image = Image::new(width, height);
         for (j, row) in image.rows.iter_mut().enumerate() {
             for (i, color) in row.pixels.iter_mut().enumerate() {
                 let pixel = self.pixel(i, j);
-                *color = pixel.estimate_color(world);
+                *color = pixel.estimate_color(world, gain);
             }
         }
         image
@@ -50,13 +44,13 @@ struct CameraPixel<'a> {
 
 impl<'a> CameraPixel<'a> {
 
-    fn estimate_color<W: World>(&self, world: &W) -> Color {
+    fn estimate_color<W: World>(&self, world: &W, gain: f64) -> Color {
         let mut color = Color::black();
         for _ in 0u16 .. self.camera.samples_per_pixel {
             let ray = thread_rng().sample(self);
             color += world.trace(&ray);
         }
-        color *= self.camera.gain;
+        color *= gain;
         color.saturated().corrected()
     }
 
@@ -70,7 +64,7 @@ impl<'a> Distribution<Ray> for CameraPixel<'a> {
         let time = rng.sample(&self.camera.exposure);
 
         let teleported_pixel_sample = Vec3D::new(pixel_sample.x(), pixel_sample.y(), -self.camera.lens.focal_length);
-        let focal_plane_sample = &teleported_pixel_sample * self.camera.lens.projection_ratio;
+        let focal_plane_sample = &teleported_pixel_sample * self.camera.lens.focal_plane_ratio;
         let direction = &focal_plane_sample - &lens_sample;
         Ray::new(lens_sample, direction, time)
     }
@@ -80,9 +74,7 @@ impl<'a> Distribution<Ray> for CameraPixel<'a> {
 pub struct Lens {
     pub aperture: f64,
     pub focal_length: f64,
-    pub focal_plane_distance: f64,
-
-    projection_ratio: f64
+    pub focal_plane_ratio: f64,
 }
 
 impl Lens {
@@ -95,8 +87,7 @@ impl Lens {
         Self {
             aperture,
             focal_length,
-            focal_plane_distance,
-            projection_ratio: focal_plane_distance / focal_length
+            focal_plane_ratio: focal_plane_distance / focal_length
         }
     }
 

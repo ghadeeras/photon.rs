@@ -1,9 +1,9 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::{Ray, Vec3D};
 use crate::geometries::Hit;
 
-pub trait Transformation {
+pub trait Transformation: Send + Sync {
 
     fn to_local(&self, ray: &Ray) -> Ray;
 
@@ -11,8 +11,20 @@ pub trait Transformation {
 
 }
 
+impl<T: Transformation> Transformation for Arc<T> {
+
+    fn to_local(&self, ray: &Ray) -> Ray {
+        self.as_ref().to_local(ray)
+    }
+
+    fn to_global(&self, hit: &Hit) -> Hit {
+        self.as_ref().to_global(hit)
+    }
+
+}
+
 pub struct Translation(pub Vec3D);
-pub struct Composite(pub Vec<Rc<dyn Transformation>>);
+pub struct Composite(pub Vec<Box<dyn Transformation>>);
 
 impl Transformation for Translation {
 

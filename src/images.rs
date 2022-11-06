@@ -13,15 +13,11 @@ pub struct Image {
 impl Image {
 
     pub fn new(width: u16, height: u16) -> Self {
-        let mut image = Self {
-            rows: vec![],
+        Self {
+            rows: (0u16 .. height).map(|_| ImageRow::new(width)).collect(),
             width,
             height
-        };
-        for _ in 0u16 .. height {
-            image.rows.push(ImageRow::new(width))
         }
-        image
     }
 
     pub fn save(&self, file: &str) {
@@ -43,11 +39,9 @@ pub struct ImageRow {
 impl ImageRow {
 
     fn new(width: u16) -> Self {
-        let mut row = Self { pixels: vec![] };
-        for _ in 0u16 .. width {
-            row.pixels.push(Color::black())
+        Self {
+            pixels: (0u16 .. width).map(|_| Color::black()).collect()
         }
-        row
     }
 
     fn write_to(&self, buffer: &mut ImageBuffer<Rgb<u8>, Vec<u8>>, j: u32) {
