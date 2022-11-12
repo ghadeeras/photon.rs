@@ -1,7 +1,7 @@
 use crate::cameras::{Camera, Exposure, Lens, Sensor};
 use crate::colors::Color;
 use crate::geometries::{Sphere, Transformed};
-use crate::materials::Diffusive;
+use crate::materials::{Diffusive, Reflective};
 use crate::rays::Ray;
 use crate::textures::{Black, Constant};
 use crate::things::{AtomicThing, Things};
@@ -51,7 +51,7 @@ fn main() {
                     geometry: Sphere,
                     transformation: Translation(Vec3D::new(0.0, 1.0, -4.0)),
                 },
-                outer_texture: Constant(Diffusive(Color::new(0.8, 0.4, 0.2))),
+                outer_texture: Constant(Diffusive(Color::new(0.2, 0.4, 0.8))),
                 inner_texture: Black,
             }),
             Box::new(AtomicThing {
@@ -59,7 +59,7 @@ fn main() {
                     geometry: Sphere,
                     transformation: Translation(Vec3D::new(0.0, -1.0, -4.0)),
                 },
-                outer_texture: Constant(Diffusive(Color::new(0.2, 0.4, 0.8))),
+                outer_texture: Constant(Reflective(Color::white())),
                 inner_texture: Black,
             }),
         ]),

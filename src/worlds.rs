@@ -48,23 +48,28 @@ impl<W: World, T: Thing> World for PathTraced<W, T> {
                     match hit.texture.material(&hit.hit, hit.geometry, hit.other_side_texture).effect_of(&hit.hit) {
                         Effect::Emission(ref c) => {
                             color = *c;
-                            depth = 0;
+                            break;
                         },
                         Effect::Scattering { color: ref c, ref brdf } => {
                             let (direction, _) = brdf.sample();
                             r.origin = hit.hit.incident_ray.origin;
                             r.direction = direction;
                             color *= c;
-                            depth -= 1;
+                        },
+                        Effect::Reflection(ref c) => {
+                            r.origin = hit.hit.incident_ray.origin;
+                            r.direction = hit.hit.incident_ray.direction - 2.0 * hit.hit.incident_ray.direction.project_on(&hit.hit.normal, false);
+                            color *= c;
                         }
                     }
                 },
                 None => {
                     r.origin = Vec3D::zero();
                     color *= self.environment.trace(&r);
-                    depth = 0;
+                    break;
                 }
             }
+            depth -= 1;
         }
         color
     }

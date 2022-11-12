@@ -20,6 +20,7 @@ impl<M: Material> Material for Arc<M> {
 
 pub enum Effect {
     Emission(Color),
+    Reflection(Color),
     Scattering {
         color: Color,
         brdf: Box<dyn BRDF>
@@ -28,6 +29,7 @@ pub enum Effect {
 
 pub struct Emissive(pub Color);
 pub struct Diffusive(pub Color);
+pub struct Reflective(pub Color);
 
 impl Material for Emissive {
 
@@ -46,6 +48,15 @@ impl Material for Diffusive {
             color: *color,
             brdf: Box::new(Lambertian::new(&hit.normal))
         }
+    }
+
+}
+
+impl Material for Reflective {
+
+    fn effect_of(&self, _: &Hit) -> Effect {
+        let Self(ref color) = self;
+        Effect::Reflection(*color)
     }
 
 }
