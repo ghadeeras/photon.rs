@@ -9,19 +9,19 @@ pub struct Color {
 
 impl Color {
 
-    pub fn black() -> Self {
+    pub const fn black() -> Self {
         Self::grey(0.0)
     }
 
-    pub fn white() -> Self {
+    pub const fn white() -> Self {
         Self::grey(1.0)
     }
 
-    pub fn grey(shade: f64) -> Self {
+    pub const fn grey(shade: f64) -> Self {
         Self::new(shade, shade, shade)
     }
 
-    pub fn new(red: f64, green: f64, blue: f64) -> Self {
+    pub const fn new(red: f64, green: f64, blue: f64) -> Self {
         Self { components: [red, green, blue] }
     }
 

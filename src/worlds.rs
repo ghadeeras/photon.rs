@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use crate::{Color, Ray};
-use crate::materials::Effect;
+use crate::{Color, Ray, Vec3D};
+use crate::materials::{Effect, Material};
 use crate::things::Thing;
 
 pub trait World: Send + Sync {
@@ -30,8 +30,8 @@ impl World for PitchBlack {
 
 pub struct PathTraced<W: World, T: Thing> {
 
-    pub sky: W,
-    pub thing: T,
+    pub environment: W,
+    pub subject: T,
     pub depth: u8,
 
 }
@@ -43,9 +43,9 @@ impl<W: World, T: Thing> World for PathTraced<W, T> {
         let mut depth = self.depth;
         let mut color = Color::white();
         while depth > 0 {
-            match self.thing.shoot(&r, 0.0001, f64::INFINITY) {
+            match self.subject.shoot(&r, 0.0001, f64::INFINITY) {
                 Some(ref hit) => {
-                    match hit.texture.material(&hit.hit, hit.geometry).effect_of(&hit.hit) {
+                    match hit.texture.material(&hit.hit, hit.geometry, hit.other_side_texture).effect_of(&hit.hit) {
                         Effect::Emission(ref c) => {
                             color = *c;
                             depth = 0;
@@ -60,7 +60,8 @@ impl<W: World, T: Thing> World for PathTraced<W, T> {
                     }
                 },
                 None => {
-                    color *= self.sky.trace(&r);
+                    r.origin = Vec3D::zero();
+                    color *= self.environment.trace(&r);
                     depth = 0;
                 }
             }

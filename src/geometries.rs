@@ -34,6 +34,7 @@ pub struct Hit {
     pub incident_ray: Ray,
     pub normal: Vec3D,
     pub distance: f64,
+    pub outside: bool,
 
     local_hit: Option<Rc<Hit>>
 
@@ -42,11 +43,13 @@ pub struct Hit {
 impl Hit {
 
     pub fn new(incident_ray: Ray, normal: Vec3D, distance: f64) -> Self {
-        Self { incident_ray, normal, distance, local_hit: None }
+        let outside = normal.dot(incident_ray.direction) <= 0.0;
+        let n = if outside { normal } else { -normal };
+        Self { incident_ray, normal: n, distance, outside, local_hit: None }
     }
 
     pub fn transformed_as(&self, incident_ray: Ray, normal: Vec3D) -> Self {
-        Self { incident_ray, normal, distance: self.distance, local_hit: Some(self.local_hit()) }
+        Self { incident_ray, normal, distance: self.distance, outside: self.outside, local_hit: Some(self.local_hit()) }
     }
 
     pub fn local_hit(&self) -> Rc<Self> {

@@ -3,7 +3,7 @@ use crate::colors::Color;
 use crate::geometries::{Sphere, Transformed};
 use crate::materials::Diffusive;
 use crate::rays::Ray;
-use crate::textures::Constant;
+use crate::textures::{Black, Constant};
 use crate::things::{AtomicThing, Things};
 use crate::transforms::Translation;
 use crate::vectors::Vec3D;
@@ -44,21 +44,23 @@ fn main() {
         samples_per_pixel: 64
     };
     let world = PathTraced {
-        sky: Sky,
-        thing: Things(vec![
+        environment: Sky,
+        subject: Things(vec![
             Box::new(AtomicThing {
                 geometry: Transformed {
                     geometry: Sphere,
-                    transformation: Translation(Vec3D::new(0.0, 1.01, -4.0)),
+                    transformation: Translation(Vec3D::new(0.0, 1.0, -4.0)),
                 },
-                texture: Constant(Diffusive(Color::new(0.8, 0.4, 0.2)))
+                outer_texture: Constant(Diffusive(Color::new(0.8, 0.4, 0.2))),
+                inner_texture: Black,
             }),
             Box::new(AtomicThing {
                 geometry: Transformed {
                     geometry: Sphere,
-                    transformation: Translation(Vec3D::new(0.0, -1.01, -4.0)),
+                    transformation: Translation(Vec3D::new(0.0, -1.0, -4.0)),
                 },
-                texture: Constant(Diffusive(Color::new(0.2, 0.4, 0.8)))
+                outer_texture: Constant(Diffusive(Color::new(0.2, 0.4, 0.8))),
+                inner_texture: Black,
             }),
         ]),
         depth: 16

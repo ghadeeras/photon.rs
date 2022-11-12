@@ -21,27 +21,37 @@ impl<T: Thing> Thing for Arc<T> {
 pub struct MaterialHit<'a> {
     pub hit: Hit,
     pub geometry: &'a dyn Geometry,
-    pub texture: &'a dyn Texture
+    pub texture: &'a dyn Texture,
+    pub other_side_texture: &'a dyn Texture,
 }
 
-pub struct AtomicThing<G: Geometry, T: Texture> {
-
+pub struct AtomicThing<G: Geometry, O: Texture, I: Texture> {
     pub geometry: G,
-    pub texture: T
-
+    pub outer_texture: O,
+    pub inner_texture: I,
 }
 
 pub struct Things(pub Vec<Box<dyn Thing>>);
 
-impl<G: Geometry, T: Texture> Thing for AtomicThing<G, T> {
+impl<G: Geometry, O: Texture, I: Texture> Thing for AtomicThing<G, O, I> {
 
     fn shoot(&self, ray: &Ray, min: f64, max: f64) -> Option<MaterialHit> {
         match self.geometry.shoot(ray, min, max) {
-            Some(ref hit) => Some(MaterialHit {
-                hit: hit.clone(),
-                geometry: &self.geometry,
-                texture: &self.texture,
-            }),
+            Some(hit) => if hit.outside {
+                Some(MaterialHit {
+                    hit,
+                    geometry: &self.geometry,
+                    texture: &self.outer_texture,
+                    other_side_texture: &self.inner_texture,
+                })
+            } else {
+                Some(MaterialHit {
+                    hit,
+                    geometry: &self.geometry,
+                    texture: &self.inner_texture,
+                    other_side_texture: &self.outer_texture,
+                })
+            },
             None => None
         }
 
