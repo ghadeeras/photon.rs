@@ -3,6 +3,7 @@ use std::ops::Mul;
 use crate::Vec3D;
 use crate::vectors::Dot;
 
+#[derive(Clone)]
 pub struct Matrix {
     columns: [Vec3D; 3]
 }
@@ -41,6 +42,17 @@ impl Matrix {
         &self.columns[2]
     }
 
+    pub fn anti_matrix(&self) -> Matrix {
+        let x = self.x();
+        let y = self.y();
+        let z = self.z();
+        Matrix::new(&y.cross(z), &z.cross(x), &x.cross(y))
+    }
+
+    pub fn det(&self) -> f64 {
+        self.x().cross(self.y()).dot(*self.z())
+    }
+
 }
 
 impl Mul<&Vec3D> for &Matrix {
@@ -49,6 +61,19 @@ impl Mul<&Vec3D> for &Matrix {
 
     fn mul(self, rhs: &Vec3D) -> Self::Output {
         self.x() * rhs.x() + self.y() * rhs.y() + self.z() * rhs.z()
+    }
+
+}
+
+impl Mul<&Matrix> for &Matrix {
+
+    type Output = Matrix;
+
+    fn mul(self, rhs: &Matrix) -> Self::Output {
+        let x = self * rhs.x();
+        let y = self * rhs.y();
+        let z = self * rhs.z();
+        Self::Output::new(&x, &y, &z)
     }
 
 }

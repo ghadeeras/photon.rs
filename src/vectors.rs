@@ -1,4 +1,5 @@
 use std::ops::{Add, Div, Mul, Neg, Sub};
+use crate::matrices::Matrix;
 
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub struct Vec3D {
@@ -216,6 +217,20 @@ impl Div<f64> for Vec3D {
 
     fn div(self, rhs: f64) -> Self::Output {
         &self / rhs
+    }
+
+}
+
+impl Mul<&Matrix> for &Vec3D {
+
+    type Output = Vec3D;
+
+    fn mul(self, rhs: &Matrix) -> Self::Output {
+        Self::Output::new(
+            self.dot(rhs.x()),
+            self.dot(rhs.y()),
+            self.dot(rhs.z()),
+        )
     }
 
 }
