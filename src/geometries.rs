@@ -28,7 +28,7 @@ impl<G: Geometry> Geometry for Arc<G> {
 
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Hit {
 
     pub incident_ray: Ray,
@@ -42,10 +42,8 @@ pub struct Hit {
 
 impl Hit {
 
-    pub fn new(incident_ray: Ray, normal: Vec3D, distance: f64) -> Self {
-        let outside = normal.dot(incident_ray.direction) <= 0.0;
-        let n = if outside { normal } else { -normal };
-        Self { incident_ray, normal: n, distance, outside, local_hit: None }
+    pub fn new(outside: bool, normal: Vec3D, incident_ray: Ray, distance: f64) -> Self {
+        Self { incident_ray, normal, distance, outside, local_hit: None }
     }
 
     pub fn transformed_as(&self, incident_ray: Ray, normal: Vec3D) -> Self {
@@ -88,9 +86,9 @@ impl Geometry for Sphere {
             let d = half_b * half_b - c;
             if d > 0.0 {
                 let sqrt_d = d.sqrt();
-                let incident = Sphere::incident(ray, -half_b - sqrt_d, min, max);
+                let incident = Sphere::incident(true, ray, -half_b - sqrt_d, min, max);
                 if let None = incident {
-                    Sphere::incident(ray, -half_b + sqrt_d, min, max)
+                    Sphere::incident(false, ray, -half_b + sqrt_d, min, max)
                 } else {
                     incident
                 }
@@ -98,7 +96,7 @@ impl Geometry for Sphere {
                 None
             }
         } else {
-            Sphere::incident(ray, -2.0 * half_b, min, max)
+            Sphere::incident(false, ray, -2.0 * half_b, min, max)
         }
     }
 
@@ -106,23 +104,23 @@ impl Geometry for Sphere {
 
 impl Sphere {
 
-    fn incident(ray: &Ray, distance: f64, min: f64, max: f64) -> Option<Hit> {
+    fn incident(outside: bool, ray: &Ray, distance: f64, min: f64, max: f64) -> Option<Hit> {
         if min < distance && distance < max {
-            Some(Self::hit(ray, distance))
+            Some(Self::hit(outside, ray, distance))
         } else {
             None
         }
     }
 
-    fn hit(ray: &Ray, distance: f64) -> Hit {
+    fn hit(outside: bool, ray: &Ray, distance: f64) -> Hit {
         let point = ray.at(distance);
         let distance_to_center = ray.origin.length();
-        let area = if distance_to_center >= 1.0 {
+        let area = if outside {
             2.0 * PI * (1.0 - 1.0 / distance_to_center)
         } else {
-            4.0 * PI
+            -4.0 * PI
         };
-        Hit::new(Ray::new(point, ray.direction, ray.time), area * point, distance)
+        Hit::new(outside, area * point, Ray::new(point, ray.direction, ray.time), distance)
     }
 
 }

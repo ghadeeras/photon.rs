@@ -13,6 +13,11 @@ pub trait BRDF {
 
     fn pdf(&self, direction: &Vec3D) -> f64;
 
+    fn direction_sample(&self) -> Vec3D {
+        let (direction, _) = self.sample();
+        direction
+    }
+
 }
 
 pub struct Lambertian(pub Matrix);

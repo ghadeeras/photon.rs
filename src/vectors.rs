@@ -1,4 +1,5 @@
 use std::ops::{Add, Div, Mul, Neg, Sub};
+
 use crate::matrices::Matrix;
 
 #[derive(PartialEq, Copy, Clone, Debug)]

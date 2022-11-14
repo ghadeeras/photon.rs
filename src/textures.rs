@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
-use crate::colors::Color;
 use crate::geometries::{Geometry, Hit};
-use crate::materials::{Effect, Material};
-use crate::materials::Emissive;
+use crate::materials::{Absorptive, Effect, Material};
 
 pub trait Texture: Send + Sync {
 
@@ -49,12 +47,10 @@ impl<M: Material> Texture for Constant<M> {
 
 }
 
-static BLACK: Emissive = Emissive(Color::black());
-
 impl Texture for Black {
 
     fn material<'a>(&'a self, _: &'a Hit, _: &'a dyn Geometry, _: &'a dyn Texture) -> MaterialHolder {
-        return MaterialHolder::Ref(&BLACK)
+        return MaterialHolder::Ref(&Absorptive)
     }
 
 }

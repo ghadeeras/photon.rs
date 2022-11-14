@@ -45,23 +45,26 @@ impl<W: World, T: Thing> World for PathTraced<W, T> {
         while depth > 0 {
             match self.subject.shoot(&r, 0.0001, f64::INFINITY) {
                 Some(ref hit) => {
-                    match hit.texture.material(&hit.hit, hit.geometry, hit.other_side_texture).effect_of(&hit.hit) {
+                    let material_holder = hit.texture.material(&hit.hit, hit.geometry, hit.other_side_texture);
+                    match material_holder.effect_of(&hit.hit) {
+                        Effect::Absorption => {
+                            color = Color::black();
+                            break;
+                        }
                         Effect::Emission(ref c) => {
                             color = *c;
                             break;
-                        },
+                        }
                         Effect::Scattering { color: ref c, ref brdf } => {
-                            let (direction, _) = brdf.sample();
-                            r.origin = hit.hit.incident_ray.origin;
-                            r.direction = direction;
+                            r.direction = brdf.direction_sample();
                             color *= c;
-                        },
-                        Effect::Reflection(ref c) => {
-                            r.origin = hit.hit.incident_ray.origin;
-                            r.direction = hit.hit.incident_ray.direction - 2.0 * hit.hit.incident_ray.direction.project_on(&hit.hit.normal, false);
+                        }
+                        Effect::Redirection(ref c, ref d) => {
+                            r.direction = *d;
                             color *= c;
                         }
                     }
+                    r.origin = hit.hit.incident_ray.origin;
                 },
                 None => {
                     r.origin = Vec3D::zero();
