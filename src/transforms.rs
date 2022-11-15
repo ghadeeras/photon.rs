@@ -25,6 +25,11 @@ impl<T: Transformation> Transformation for Arc<T> {
 
 }
 
+pub struct Transformed<S, T: Transformation> {
+    pub subject: S,
+    pub transformation: T
+}
+
 pub struct Translation(Vec3D);
 pub struct Linear(Matrix, Matrix, f64);
 pub struct Affine(Linear, Translation);

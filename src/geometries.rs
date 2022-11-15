@@ -3,7 +3,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::{Ray, Vec3D};
-use crate::transforms::Transformation;
+use crate::transforms::{Transformation, Transformed};
 use crate::vectors::Dot;
 
 pub trait Geometry: Send + Sync {
@@ -59,15 +59,10 @@ impl Hit {
 
 }
 
-pub struct Transformed<G: Geometry, T: Transformation> {
-    pub geometry: G,
-    pub transformation: T
-}
-
 impl<G: Geometry, T: Transformation> Geometry for Transformed<G, T> {
 
     fn shoot(&self, ray: &Ray, min: f64, max: f64) -> Option<Hit> {
-        self.geometry
+        self.subject
             .shoot(&self.transformation.to_local(ray), min, max)
             .map(| hit | self.transformation.to_global(&hit))
     }

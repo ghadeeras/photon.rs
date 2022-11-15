@@ -3,6 +3,7 @@ use std::sync::Arc;
 use crate::geometries::{Geometry, Hit};
 use crate::Ray;
 use crate::textures::Texture;
+use crate::transforms::{Transformation, Transformed};
 
 pub trait Thing: Send + Sync {
 
@@ -37,24 +38,27 @@ impl<G: Geometry, O: Texture, I: Texture> Thing for AtomicThing<G, O, I> {
 
     fn shoot(&self, ray: &Ray, min: f64, max: f64) -> Option<MaterialHit> {
         match self.geometry.shoot(ray, min, max) {
-            Some(hit) => if hit.outside {
-                Some(MaterialHit {
-                    hit,
-                    geometry: &self.geometry,
-                    texture: &self.outer_texture,
-                    other_side_texture: &self.inner_texture,
-                })
+            Some(hit) => Some(if hit.outside {
+                self.material_hit(hit, &self.outer_texture, &self.inner_texture)
             } else {
-                Some(MaterialHit {
-                    hit,
-                    geometry: &self.geometry,
-                    texture: &self.inner_texture,
-                    other_side_texture: &self.outer_texture,
-                })
-            },
+                self.material_hit(hit, &self.inner_texture, &self.outer_texture)
+            }),
             None => None
         }
 
+    }
+
+}
+
+impl<G: Geometry, O: Texture, I: Texture> AtomicThing<G, O, I> {
+
+    fn material_hit<'a>(&'a self, hit: Hit, texture: &'a dyn Texture, other_side_texture: &'a dyn Texture) -> MaterialHit {
+        MaterialHit {
+            hit,
+            geometry: &self.geometry,
+            texture,
+            other_side_texture
+        }
     }
 
 }
@@ -73,6 +77,24 @@ impl Thing for Things {
             }
         }
         hit
+    }
+
+}
+
+impl<T: Thing, F: Transformation> Thing for Transformed<T, F> {
+
+    fn shoot(&self, ray: &Ray, min: f64, max: f64) -> Option<MaterialHit> {
+        let local_ray = self.transformation.to_local(ray);
+        let local_hit = self.subject.shoot(&local_ray, min, max);
+        match local_hit {
+            Some(ref h) => Some(MaterialHit {
+                hit: self.transformation.to_global(&h.hit),
+                geometry: h.geometry,
+                texture: h.texture,
+                other_side_texture: h.other_side_texture
+            }),
+            None => None
+        }
     }
 
 }
