@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use crate::{Ray, Vec3D};
 use crate::geometries::Hit;
 use crate::matrices::Matrix;
-use crate::vectors::Dot;
+use crate::rays::Ray;
+use crate::vectors::{Dot, Vec3D};
 
 pub trait Transformation: Send + Sync {
 
@@ -52,11 +52,11 @@ impl Linear {
     }
 
     pub fn scaling(x: f64, y:f64, z: f64) -> Self {
-        Linear::of(&Matrix::new(
-            &Vec3D::new(x, 0.0, 0.0),
-            &Vec3D::new(0.0, y, 0.0),
-            &Vec3D::new(0.0, 0.0, z),
-        ))
+        Linear::of(&Matrix::diagonal(x, y, z))
+    }
+
+    pub fn rotation(axis: &Vec3D, angle: f64) -> Self {
+        Linear::of(&Matrix::rotation(axis, angle))
     }
 
     pub fn then(self, translation: Translation) -> Affine {

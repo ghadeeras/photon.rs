@@ -4,8 +4,7 @@ use rand::{Rng, thread_rng};
 
 use crate::matrices::Matrix;
 use crate::sampling::UniformSolidUnitSquare;
-use crate::Vec3D;
-use crate::vectors::Dot;
+use crate::vectors::{Dot, Vec3D};
 
 pub trait BRDF {
 

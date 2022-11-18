@@ -1,8 +1,10 @@
 use std::sync::Arc;
 
-use crate::{Color, Ray, Vec3D};
+use crate::colors::Color;
 use crate::materials::{Effect, Material};
+use crate::rays::Ray;
 use crate::things::Thing;
+use crate::vectors::Vec3D;
 
 pub trait World: Send + Sync {
 
@@ -52,7 +54,7 @@ impl<W: World, T: Thing> World for PathTraced<W, T> {
                             break;
                         }
                         Effect::Emission(ref c) => {
-                            color = *c;
+                            color *= c;
                             break;
                         }
                         Effect::Scattering { color: ref c, ref brdf } => {

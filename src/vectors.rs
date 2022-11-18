@@ -23,23 +23,23 @@ pub trait Dot where Self: Copy {
 
 impl Vec3D {
 
-    pub fn zero() -> Self {
+    pub const fn zero() -> Self {
         Self::new(0.0, 0.0, 0.0)
     }
 
-    pub fn new(x: f64, y: f64, z: f64) -> Self {
+    pub const fn new(x: f64, y: f64, z: f64) -> Self {
         Vec3D { components: [x, y, z] }
     }
 
-    pub fn x(&self) -> f64 {
+    pub const fn x(&self) -> f64 {
         self.components[0]
     }
 
-    pub fn y(&self) -> f64 {
+    pub const fn y(&self) -> f64 {
         self.components[1]
     }
 
-    pub fn z(&self) -> f64 {
+    pub const fn z(&self) -> f64 {
         self.components[2]
     }
 

@@ -1,7 +1,6 @@
 use std::ops::Mul;
 
-use crate::Vec3D;
-use crate::vectors::Dot;
+use crate::vectors::{Dot, Vec3D};
 
 #[derive(Clone)]
 pub struct Matrix {
@@ -28,6 +27,38 @@ impl Matrix {
         let xx = x.reject(&zz, true).unit();
         let yy = zz.cross(&xx);
         Self::new(&xx, &yy, &zz)
+    }
+
+    pub fn diagonal(x: f64, y: f64, z: f64) -> Self {
+        Self::new(
+            &Vec3D::new(x, 0.0, 0.0),
+            &Vec3D::new(0.0, y, 0.0),
+            &Vec3D::new(0.0, 0.0, z),
+        )
+    }
+
+    pub fn rotation(axis: &Vec3D, angle: f64) -> Self {
+        let unit_axis = axis.unit();
+        let cos = angle.cos();
+        let sin = angle.sin();
+        let x = unit_axis.x();
+        let y = unit_axis.y();
+        let z = unit_axis.z();
+        let one_minus_cos = 1.0 - cos;
+        let x1 = x * one_minus_cos;
+        let y1 = y * one_minus_cos;
+        let z1 = z * one_minus_cos;
+        let xx = x * x1;
+        let yy = y * y1;
+        let zz = z * z1;
+        let xy = x * y1;
+        let yz = y * z1;
+        let zx = z * x1;
+        Self::new(
+            &Vec3D::new(xx + cos, xy + z * sin, zx - y * sin),
+            &Vec3D::new(xy - z * sin, yy + cos, yz + x * sin),
+            &Vec3D::new(zx + y * sin, yz - x * sin, zz + cos)
+        )
     }
 
     pub fn x(&self) -> &Vec3D {

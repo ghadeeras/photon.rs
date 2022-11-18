@@ -2,9 +2,9 @@ use std::f64::consts::PI;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use crate::{Ray, Vec3D};
+use crate::rays::Ray;
 use crate::transforms::{Transformation, Transformed};
-use crate::vectors::Dot;
+use crate::vectors::{Dot, Vec3D};
 
 pub trait Geometry: Send + Sync {
 

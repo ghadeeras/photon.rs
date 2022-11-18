@@ -1,6 +1,6 @@
 use image::{ImageBuffer, Rgb};
 
-use crate::Color;
+use crate::colors::Color;
 
 pub struct Image {
 

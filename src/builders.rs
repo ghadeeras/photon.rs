@@ -1,11 +1,12 @@
 #![allow(dead_code)]
 
 use std::sync::Arc;
-use crate::things::Thing;
-use crate::{AtomicThing, Black, PathTraced, Same, Transformed, World};
+
 use crate::geometries::Geometry;
-use crate::textures::Texture;
-use crate::transforms::Transformation;
+use crate::textures::{Black, Same, Texture};
+use crate::things::{AtomicThing, Thing};
+use crate::transforms::{Transformation, Transformed};
+use crate::worlds::{PathTraced, World};
 
 pub struct From<T>(pub T);
 

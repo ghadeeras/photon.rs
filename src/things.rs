@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::geometries::{Geometry, Hit};
-use crate::Ray;
+use crate::rays::Ray;
 use crate::textures::Texture;
 use crate::transforms::{Transformation, Transformed};
 

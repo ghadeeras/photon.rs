@@ -4,9 +4,12 @@ use rand::{Rng, thread_rng};
 use rand::prelude::Distribution;
 use rayon::prelude::*;
 
-use crate::{Color, Ray, Vec3D, World};
+use crate::colors::Color;
 use crate::images::Image;
+use crate::rays::Ray;
 use crate::sampling::{UniformSolidUnitCircle, UniformSolidUnitSquare};
+use crate::vectors::Vec3D;
+use crate::worlds::World;
 
 pub struct Camera {
     pub lens: Lens,

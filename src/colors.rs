@@ -38,8 +38,11 @@ impl Color {
     }
 
     pub fn saturated(&self) -> Self {
-        let max = self.red().max(self.green()).max(self.blue());
-        if max <= 1.0 { *self } else { self / max }
+        Color::new(
+            self.red().min(1.0),
+            self.green().min(1.0),
+            self.blue().min(1.0),
+        )
     }
 
     pub fn corrected(&self) -> Self {

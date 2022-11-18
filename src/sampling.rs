@@ -3,8 +3,7 @@ use std::f64::consts::{FRAC_1_PI, PI};
 use rand::prelude::Distribution;
 use rand::Rng;
 
-use crate::Vec3D;
-use crate::vectors::Dot;
+use crate::vectors::{Dot, Vec3D};
 
 pub struct UniformSolidUnitSquare;
 pub struct UniformSolidUnitCircle;

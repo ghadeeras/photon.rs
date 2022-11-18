@@ -2,9 +2,10 @@ use std::sync::Arc;
 
 use rand::{Rng, thread_rng};
 
-use crate::{Color, Dot, Vec3D};
 use crate::brdfs::{BRDF, Lambertian};
+use crate::colors::Color;
 use crate::geometries::Hit;
+use crate::vectors::{Dot, Vec3D};
 
 pub trait Material: Send + Sync {
 
