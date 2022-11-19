@@ -6,7 +6,7 @@ use photon::materials::{Diffusive, Reflective, RefractionIndex, Refractive};
 use photon::rays::Ray;
 use photon::textures::Constant;
 use photon::things::Things;
-use photon::transforms::{Linear, Translation};
+use photon::transforms::{AffineTransformation, Linear, Translation};
 use photon::vectors::{Dot, Vec3D};
 use photon::worlds::World;
 
@@ -30,19 +30,19 @@ pub fn main() {
     };
     let world = From(Things(vec![
         From(Sphere)
-            .transformed(Linear::scaling(1.5, 1.5, 1.5).then(Translation::new(1.5, 0.0, 0.0)))
+            .transformed(Linear::scaling(1.5, 1.5, 1.5).then_displacement_of(1.5, 0.0, 0.0))
             .with_outer_texture(Constant(Diffusive(Color::new(0.8, 0.4, 0.2))))
             .boxed(),
         From(Sphere)
-            .transformed(Linear::scaling(0.75, 0.75, 0.75).then(Translation::new(0.0, -0.75, 1.5)))
+            .transformed(Linear::scaling(0.75, 0.75, 0.75).then_displacement_of(0.0, -0.75, 1.5))
             .with_texture(Constant(Refractive(Color::white(), RefractionIndex::of(1.5))))
             .boxed(),
         From(Sphere)
-            .transformed(Linear::scaling(3.0, 3.0, 3.0).then(Translation::new(-2.5, 1.5, -3.0)))
+            .transformed(Linear::scaling(3.0, 3.0, 3.0).then_displacement_of(-2.5, 1.5, -3.0))
             .with_outer_texture(Constant(Reflective(Color::new(0.8, 0.8, 0.8))))
             .boxed(),
         From(Sphere)
-            .transformed(Linear::scaling(16.0, 2.0, 16.0).then(Translation::new(1.5, -3.5, 0.0)))
+            .transformed(Linear::scaling(16.0, 2.0, 16.0).then_displacement_of(1.5, -3.5, 0.0))
             .with_outer_texture(Constant(Diffusive(Color::new(0.2, 0.4, 0.8))))
             .boxed(),
     ]))

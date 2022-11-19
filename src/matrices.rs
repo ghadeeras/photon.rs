@@ -29,6 +29,10 @@ impl Matrix {
         Self::new(&xx, &yy, &zz)
     }
 
+    pub fn identity() -> Self {
+        Self::diagonal(1.0, 1.0, 1.0)
+    }
+
     pub fn diagonal(x: f64, y: f64, z: f64) -> Self {
         Self::new(
             &Vec3D::new(x, 0.0, 0.0),

@@ -5,11 +5,10 @@ use photon::cameras::{Camera, Exposure, Lens, Sensor};
 use photon::colors::Color;
 use photon::geometries::{Geometry, Hit, Sphere};
 use photon::materials::{Composite, Diffusive, Emissive, Material, Reflective, RefractionIndex, Refractive};
-use photon::matrices::Matrix;
 use photon::rays::Ray;
 use photon::textures::{Constant, MaterialHolder, Texture};
 use photon::things::Things;
-use photon::transforms::{Linear, Translation};
+use photon::transforms::{AffineTransformation, Linear, Translation};
 use photon::vectors::{Dot, Vec3D};
 use photon::worlds::World;
 
@@ -56,15 +55,14 @@ pub fn main() {
             .with_texture(Constant(Refractive(Color::white(), RefractionIndex::of(1.5))))
             .boxed(),
         From(Sphere)
-            .transformed(Linear::scaling(2.0, 2.0, 2.0).then(Translation::new(-1.0, -1.0, -1.0)))
+            .transformed(Linear::scaling(2.0, 2.0, 2.0)
+                .then_displacement_of(-1.0, -1.0, -1.0))
             .with_texture(Constant(Diffusive(Color::new(0.2, 0.4, 0.8))))
             .boxed(),
         From(Sphere)
-            .transformed(
-                Linear::of(&(
-                    &Matrix::rotation(&Vec3D::new(1.0, 0.0, -1.0), -PI/6.0) *
-                    &Matrix::diagonal(2.0, 1.0, 2.0)
-                )).then(Translation::new(-2.0, 2.0, -1.0))
+            .transformed(Linear::scaling(2.0, 1.0, 2.0)
+                .then_rotation(&Vec3D::new(1.0, 0.0, -1.0), -PI/6.0)
+                .then_displacement_of(-2.0, 2.0, -1.0)
             )
             .with_texture(CheckerBoard(
                 Diffusive(Color::new(0.8, 0.4, 0.2)),
@@ -72,19 +70,17 @@ pub fn main() {
             ))
             .boxed(),
         From(Sphere)
-            .transformed(
-                Linear::of(&(
-                    &Matrix::rotation(&Vec3D::new(2.0, 0.0, 1.0), -PI/6.0) *
-                    &Matrix::diagonal(2.0, 3.0, 2.0)
-                )).then(Translation::new(3.0, 0.0, -8.0))
-            )
+            .transformed(Linear::scaling(2.0, 3.0, 2.0)
+                .then_rotation(&Vec3D::new(2.0, 0.0, 1.0), -PI/6.0)
+                .then_displacement_of(3.0, 0.0, -8.0))
             .with_texture(Constant(Composite::new(vec![
                 (Box::new(Reflective(Color::white())), 0.7),
                 (Box::new(Diffusive(Color::white())), 0.3),
             ])))
             .boxed(),
         From(Sphere)
-            .transformed(Linear::scaling(10.0, 10.0, 10.0).then(Translation::new(20.0, 20.0, 20.0)))
+            .transformed(Linear::scaling(10.0, 10.0, 10.0)
+                .then_displacement_of(20.0, 20.0, 20.0))
             .with_outer_texture(Constant(Emissive(Color::grey(16.0))))
             .boxed(),
     ]))

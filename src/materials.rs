@@ -44,7 +44,7 @@ pub struct RefractionIndex(f64, f64, f64);
 impl Material for Absorptive {
 
     fn effect_of(&self, _: &Hit) -> Effect {
-        Effect::Absorption
+        Absorption
     }
 
 }
