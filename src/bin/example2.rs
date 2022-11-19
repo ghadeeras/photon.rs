@@ -3,11 +3,11 @@ use std::f64::consts::PI;
 use photon::builders::From;
 use photon::cameras::{Camera, Exposure, Lens, Sensor};
 use photon::colors::Color;
-use photon::geometries::Sphere;
-use photon::materials::{Diffusive, Emissive, Reflective, RefractionIndex, Refractive};
+use photon::geometries::{Geometry, Hit, Sphere};
+use photon::materials::{Composite, Diffusive, Emissive, Material, Reflective, RefractionIndex, Refractive};
 use photon::matrices::Matrix;
 use photon::rays::Ray;
-use photon::textures::Constant;
+use photon::textures::{Constant, MaterialHolder, Texture};
 use photon::things::Things;
 use photon::transforms::{Linear, Translation};
 use photon::vectors::{Dot, Vec3D};
@@ -24,6 +24,20 @@ impl World for Sky {
     fn trace(&self, ray: &Ray) -> Color {
         let alignment_with_galaxy = (1.0 - ray.direction.unit().dot(GALAXY_AXIS.unit()).powf(2.0)).powf(GALAXY_THINNESS);
         return Color::grey(alignment_with_galaxy * GALAXY_BRIGHTNESS);
+    }
+
+}
+
+struct CheckerBoard<W: Material, B: Material>(W, B);
+
+impl<W: Material, B: Material> Texture for CheckerBoard<W, B> {
+
+    fn material<'a>(&'a self, hit: &'a Hit, geometry: &'a dyn Geometry, _: &'a dyn Texture) -> MaterialHolder {
+        let &Self(ref w, ref b) = self;
+        let point = geometry.surface_coordinates(&hit.local_hit().incident_ray.origin);
+        let x = (5.0 * point.x() + 0.5).floor() as i32;
+        let y = (5.0 * point.y() + 0.0).floor() as i32;
+        MaterialHolder::Ref(if (x + y) & 1 == 0 { b } else { w })
     }
 
 }
@@ -52,7 +66,10 @@ pub fn main() {
                     &Matrix::diagonal(2.0, 1.0, 2.0)
                 )).then(Translation::new(-2.0, 2.0, -1.0))
             )
-            .with_texture(Constant(Reflective(Color::new(1.0, 1.0, 0.0))))
+            .with_texture(CheckerBoard(
+                Diffusive(Color::new(0.8, 0.4, 0.2)),
+                Reflective(Color::new(1.0, 1.0, 0.0))
+            ))
             .boxed(),
         From(Sphere)
             .transformed(
@@ -61,7 +78,10 @@ pub fn main() {
                     &Matrix::diagonal(2.0, 3.0, 2.0)
                 )).then(Translation::new(3.0, 0.0, -8.0))
             )
-            .with_texture(Constant(Reflective(Color::grey(0.7))))
+            .with_texture(Constant(Composite::new(vec![
+                (Box::new(Reflective(Color::white())), 0.7),
+                (Box::new(Diffusive(Color::white())), 0.3),
+            ])))
             .boxed(),
         From(Sphere)
             .transformed(Linear::scaling(10.0, 10.0, 10.0).then(Translation::new(20.0, 20.0, 20.0)))

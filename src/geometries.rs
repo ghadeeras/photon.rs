@@ -10,9 +10,7 @@ pub trait Geometry: Send + Sync {
 
     fn shoot(&self, ray: &Ray, min: f64, max: f64) -> Option<Hit>;
 
-    fn surface_coordinates(&self, point: &Vec3D) -> Vec3D {
-        *point
-    }
+    fn surface_coordinates(&self, point: &Vec3D) -> Vec3D;
 
 }
 
@@ -67,6 +65,10 @@ impl<G: Geometry, T: Transformation> Geometry for Transformed<G, T> {
             .map(| hit | self.transformation.to_global(&hit))
     }
 
+    fn surface_coordinates(&self, point: &Vec3D) -> Vec3D {
+        self.subject.surface_coordinates(point)
+    }
+
 }
 
 pub struct Sphere;
@@ -93,6 +95,13 @@ impl Geometry for Sphere {
         } else {
             Sphere::incident(false, ray, -2.0 * half_b, min, max)
         }
+    }
+
+    fn surface_coordinates(&self, point: &Vec3D) -> Vec3D {
+        let &Vec3D { components: [x, y, z] } = point;
+        let a = x.atan2(z) / PI;
+        let b = y.atan2((x * x + z * z).sqrt()) / PI;
+        Vec3D::new(a, b, 0.0)
     }
 
 }

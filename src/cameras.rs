@@ -1,4 +1,5 @@
 use std::ops::Mul;
+use std::sync::atomic::{AtomicI8, Ordering};
 
 use rand::{Rng, thread_rng};
 use rand::prelude::Distribution;
@@ -21,8 +22,14 @@ pub struct Camera {
 impl Camera {
 
     pub fn shoot<W: World>(&self, world: &W, stack_count: u8) -> Image {
+        let counter = AtomicI8::new(0);
         let mut image = (0 .. stack_count).into_par_iter()
-            .map(|_| self.shoot_linear(world))
+            .map(move |_| {
+                let image = self.shoot_linear(world);
+                let c = counter.fetch_add(1, Ordering::Relaxed);
+                println!("Rendered {} frames out of {}", c + 1, stack_count);
+                image
+            })
             .reduce(|| Image::new(self.sensor.width, self.sensor.height), |i1, i2| {
                 i1.blend(&i2, |c1, c2| c1 + c2)
             });

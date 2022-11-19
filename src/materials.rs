@@ -5,6 +5,7 @@ use rand::{Rng, thread_rng};
 use crate::brdfs::{BRDF, Lambertian};
 use crate::colors::Color;
 use crate::geometries::Hit;
+use crate::materials::Effect::Absorption;
 use crate::vectors::{Dot, Vec3D};
 
 pub trait Material: Send + Sync {
@@ -36,6 +37,7 @@ pub struct Emissive(pub Color);
 pub struct Diffusive(pub Color);
 pub struct Reflective(pub Color);
 pub struct Refractive(pub Color, pub RefractionIndex);
+pub struct Composite(Vec<(Box<dyn Material>, f64)>);
 
 pub struct RefractionIndex(f64, f64, f64);
 
@@ -133,6 +135,35 @@ impl RefractionIndex {
     fn schlick_reflectance(&self, cos_angle: f64) -> f64 {
         let &Self(_, c1, c2) = self;
         c1 + c2 * (1.0 - cos_angle).powf(5.0)
+    }
+
+}
+
+impl Material for Composite {
+
+    fn effect_of(&self, hit: &Hit) -> Effect {
+        let &Self(ref materials) = self;
+        let choice: f64 = thread_rng().gen();
+        let mut sum = 0.0;
+        for (material, weight) in materials {
+            sum += weight;
+            if sum >= choice {
+                return material.effect_of(hit)
+            }
+        }
+        Absorption
+    }
+
+}
+
+impl Composite {
+
+    pub fn new(materials: Vec<(Box<dyn Material>, f64)>) -> Self {
+        let weights_sum: f64 = materials.iter().map(|(_, weight)| weight).sum();
+        let new_materials: Vec<(Box<dyn Material>, f64)> = materials.into_iter()
+            .map(|(m, weight)| (m, weight / weights_sum))
+            .collect();
+        Self(new_materials)
     }
 
 }
