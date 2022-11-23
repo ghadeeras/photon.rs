@@ -1,5 +1,5 @@
 use std::ops::Mul;
-use std::sync::atomic::{AtomicI8, Ordering};
+use std::sync::atomic::{AtomicU16, Ordering};
 
 use rand::{Rng, thread_rng};
 use rand::prelude::Distribution;
@@ -21,8 +21,8 @@ pub struct Camera {
 
 impl Camera {
 
-    pub fn shoot<W: World>(&self, world: &W, stack_count: u8) -> Image {
-        let counter = AtomicI8::new(0);
+    pub fn shoot<W: World>(&self, world: &W, stack_count: u16) -> Image {
+        let counter = AtomicU16::new(0);
         let mut image = (0 .. stack_count).into_par_iter()
             .map(move |_| {
                 let image = self.shoot_linear(world);

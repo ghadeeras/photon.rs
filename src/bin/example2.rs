@@ -1,10 +1,12 @@
-use std::f64::consts::PI;
+use std::f64::consts::{PI, SQRT_2};
 
 use photon::builders::From;
 use photon::cameras::{Camera, Exposure, Lens, Sensor};
 use photon::colors::Color;
 use photon::geometries::{Geometry, Hit, Sphere};
-use photon::materials::{Composite, Diffusive, Emissive, Material, Reflective, RefractionIndex, Refractive};
+use photon::materials::{Diffusive, Emissive, Material, Reflective, RefractionIndex, Refractive};
+use photon::matrices::Matrix;
+use photon::noise::{Fractal, Noise, Simple};
 use photon::rays::Ray;
 use photon::textures::{Constant, MaterialHolder, Texture};
 use photon::things::Things;
@@ -41,6 +43,56 @@ impl<W: Material, B: Material> Texture for CheckerBoard<W, B> {
 
 }
 
+struct PlanetCrust {
+    noise: Fractal<Simple>,
+    land: Color,
+    sea: Color,
+    sea_level: f64,
+    detail: f64
+}
+
+impl Texture for PlanetCrust {
+
+    fn material<'a>(&'a self, hit: &'a Hit, _: &'a dyn Geometry, _: &'a dyn Texture) -> MaterialHolder {
+        let noise = self.noise.value_at(&(hit.incident_ray.origin * self.detail)) * 2.0;
+        let level = ((noise - noise.floor()) * 2.0 - 1.0).abs();
+        let smooth_level = level * level * (3.0 - 2.0 * level);
+        MaterialHolder::New(if smooth_level > self.sea_level {
+            Box::new(Diffusive(smooth_level * self.land))
+        } else {
+            Box::new(Reflective(self.sea))
+        })
+    }
+
+}
+
+struct Woody {
+    noise: Fractal<Simple>,
+    color: Color,
+    freq: f64,
+    detail: f64
+}
+
+impl Texture for Woody {
+
+    fn material<'a>(&'a self, hit: &'a Hit, _: &'a dyn Geometry, _: &'a dyn Texture) -> MaterialHolder {
+        let noise = self.noise.value_at(&(hit.incident_ray.origin * self.detail)) * self.freq;
+        MaterialHolder::New(Box::new(Diffusive(noise.fract() * self.color)))
+    }
+
+}
+
+fn fractal_noise(depth: u8) -> Fractal<Simple> {
+    let s = SQRT_2;
+    Fractal::new(
+        Simple,
+        &Matrix::with_z_alignment(&Vec3D::new(3.0, 2.0, 1.0)) * &Matrix::diagonal(s, s, s),
+        Vec3D::new(0.4, 0.5, 0.6),
+        1.0 / s,
+        depth
+    )
+}
+
 pub fn main() {
     let distance = 100.0;
     let camera = Camera {
@@ -57,7 +109,12 @@ pub fn main() {
         From(Sphere)
             .transformed(Linear::scaling(2.0, 2.0, 2.0)
                 .then_displacement_of(-1.0, -1.0, -1.0))
-            .with_texture(Constant(Diffusive(Color::new(0.2, 0.4, 0.8))))
+            .with_texture(Woody {
+                noise: fractal_noise(4),
+                color: Color::new(0.2, 0.4, 0.8),
+                freq: 32.0,
+                detail: 0.5
+            })
             .boxed(),
         From(Sphere)
             .transformed(Linear::scaling(2.0, 1.0, 2.0)
@@ -66,17 +123,20 @@ pub fn main() {
             )
             .with_texture(CheckerBoard(
                 Diffusive(Color::new(0.8, 0.4, 0.2)),
-                Reflective(Color::new(1.0, 1.0, 0.0))
+                Reflective(Color::new(1.0, 1.0, 0.1))
             ))
             .boxed(),
         From(Sphere)
             .transformed(Linear::scaling(2.0, 3.0, 2.0)
                 .then_rotation(&Vec3D::new(2.0, 0.0, 1.0), -PI/6.0)
                 .then_displacement_of(3.0, 0.0, -8.0))
-            .with_texture(Constant(Composite::new(vec![
-                (Box::new(Reflective(Color::white())), 0.7),
-                (Box::new(Diffusive(Color::white())), 0.3),
-            ])))
+            .with_texture(PlanetCrust {
+                noise: fractal_noise(16),
+                land: Color::new(0.4, 0.8, 0.2),
+                sea: Color::new(0.1, 1.0, 1.0),
+                sea_level: 0.5,
+                detail: 0.5
+            })
             .boxed(),
         From(Sphere)
             .transformed(Linear::scaling(10.0, 10.0, 10.0)

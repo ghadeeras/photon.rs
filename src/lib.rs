@@ -13,3 +13,4 @@ pub mod materials;
 pub mod transforms;
 pub mod brdfs;
 pub mod builders;
+pub mod noise;
