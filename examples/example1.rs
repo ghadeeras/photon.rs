@@ -1,4 +1,4 @@
-use photon::builders::From;
+use photon::builders::Building;
 use photon::cameras::{Camera, Exposure, Lens, Sensor};
 use photon::colors::Color;
 use photon::geometries::Sphere;
@@ -28,25 +28,25 @@ pub fn main() {
         exposure: Exposure(0.0),
         samples_per_pixel: 64
     };
-    let world = From(Things(vec![
-        From(Sphere)
+    let world = Building(Things(vec![
+        Building(Sphere)
             .transformed(Linear::scaling(1.5, 1.5, 1.5).then_displacement_of(1.5, 0.0, 0.0))
             .with_outer_texture(Constant(Diffusive(Color::new(0.8, 0.4, 0.2))))
             .boxed(),
-        From(Sphere)
+        Building(Sphere)
             .transformed(Linear::scaling(0.75, 0.75, 0.75).then_displacement_of(0.0, -0.75, 1.5))
             .with_texture(Constant(Refractive(Color::white(), RefractionIndex::of(1.5))))
             .boxed(),
-        From(Sphere)
+        Building(Sphere)
             .transformed(Linear::scaling(3.0, 3.0, 3.0).then_displacement_of(-2.5, 1.5, -3.0))
             .with_outer_texture(Constant(Reflective(Color::new(0.8, 0.8, 0.8))))
             .boxed(),
-        From(Sphere)
+        Building(Sphere)
             .transformed(Linear::scaling(16.0, 2.0, 16.0).then_displacement_of(1.5, -3.5, 0.0))
             .with_outer_texture(Constant(Diffusive(Color::new(0.2, 0.4, 0.8))))
             .boxed(),
     ]))
-        .with_transformed_geometry(Translation::new(0.0, 0.0, -4.0))
+        .transformed(Translation::new(0.0, 0.0, -4.0))
         .with_environment_and_depth(Sky, 16)
         .done();
     let time = std::time::SystemTime::now();

@@ -1,6 +1,6 @@
 use std::f64::consts::{PI, SQRT_2};
 
-use photon::builders::From;
+use photon::builders::Building;
 use photon::cameras::{Camera, Exposure, Lens, Sensor};
 use photon::colors::Color;
 use photon::geometries::{Geometry, Hit, Sphere};
@@ -101,12 +101,12 @@ pub fn main() {
         exposure: Exposure(0.0),
         samples_per_pixel: 32
     };
-    let world = From(Things(vec![
-        From(Sphere)
+    let world = Building(Things(vec![
+        Building(Sphere)
             .transformed(Translation::new(1.0, 1.0, 1.0))
             .with_texture(Constant(Refractive(Color::white(), RefractionIndex::of(1.5))))
             .boxed(),
-        From(Sphere)
+        Building(Sphere)
             .transformed(Linear::scaling(2.0, 2.0, 2.0)
                 .then_displacement_of(-1.0, -1.0, -1.0))
             .with_texture(Woody {
@@ -116,7 +116,7 @@ pub fn main() {
                 detail: 0.5
             })
             .boxed(),
-        From(Sphere)
+        Building(Sphere)
             .transformed(Linear::scaling(2.0, 1.0, 2.0)
                 .then_rotation(&Vec3D::new(1.0, 0.0, -1.0), -PI/6.0)
                 .then_displacement_of(-2.0, 2.0, -1.0)
@@ -126,7 +126,7 @@ pub fn main() {
                 Reflective(Color::new(1.0, 1.0, 0.1))
             ))
             .boxed(),
-        From(Sphere)
+        Building(Sphere)
             .transformed(Linear::scaling(2.0, 3.0, 2.0)
                 .then_rotation(&Vec3D::new(2.0, 0.0, 1.0), -PI/6.0)
                 .then_displacement_of(3.0, 0.0, -8.0))
@@ -138,13 +138,13 @@ pub fn main() {
                 detail: 0.5
             })
             .boxed(),
-        From(Sphere)
+        Building(Sphere)
             .transformed(Linear::scaling(10.0, 10.0, 10.0)
                 .then_displacement_of(20.0, 20.0, 20.0))
             .with_outer_texture(Constant(Emissive(Color::grey(16.0))))
             .boxed(),
     ]))
-        .with_transformed_geometry(Translation::new(-0.35, -0.2, -distance))
+        .transformed(Translation::new(-0.35, -0.2, -distance))
         .with_environment_and_depth(Sky, 16)
         .done();
     let time = std::time::SystemTime::now();
