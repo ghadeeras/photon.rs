@@ -58,7 +58,7 @@ impl<W: World, T: Thing> World for PathTraced<W, T> {
                             break;
                         }
                         Effect::Scattering { color: ref c, ref brdf } => {
-                            r.direction = brdf.direction_sample();
+                            r.direction = brdf.sample_direction();
                             color *= c;
                         }
                         Effect::Redirection(ref c, ref d) => {

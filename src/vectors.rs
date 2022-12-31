@@ -236,3 +236,34 @@ impl Mul<&Matrix> for &Vec3D {
 
 }
 
+#[cfg(test)]
+pub mod tests {
+
+    use proptest::{*, strategy::*};
+    use super::*;
+
+    prop_compose! {
+        pub fn range()(v in -1.0..1.0) -> f64 {
+            v
+        }
+    }
+
+    prop_compose! {
+        pub fn vec3()(x in range(), y in range(), z in range()) -> Vec3D {
+            Vec3D::new(x, y, z)
+        }
+    }
+
+    prop_compose! {
+        pub fn non_zero_vec3()(v in vec3().prop_filter("non-zero vectors", |v| v.length() != 0.0)) -> Vec3D {
+            v
+        }
+    }
+
+    prop_compose! {
+        pub fn unit_vec3()(v in non_zero_vec3()) -> Vec3D {
+            v.unit()
+        }
+    }
+
+}

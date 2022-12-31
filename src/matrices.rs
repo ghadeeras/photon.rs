@@ -2,7 +2,7 @@ use std::ops::Mul;
 
 use crate::vectors::{Dot, Vec3D};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Matrix {
     columns: [Vec3D; 3]
 }

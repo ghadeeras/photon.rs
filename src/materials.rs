@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use rand::{Rng, thread_rng};
 
-use crate::brdfs::{BRDF, Lambertian};
+use crate::brdfs::{BRDF, lambertian::Lambertian};
 use crate::colors::Color;
 use crate::geometries::Hit;
 use crate::materials::Effect::Absorption;
