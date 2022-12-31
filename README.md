@@ -1,4 +1,5 @@
 # Photon.rs
+![CI Build](https://github.com/ghadeeras/photon.rs/workflows/ci-build/badge.svg?branch=main)
 
 Photon.rs is a Rust ray tracing (or path tracing) library that could be used to produce realistic 3D images. I started 
 writing this library in Java at first (see the [Photon](https://github.com/ghadeeras/photon) project) to exercise the 
