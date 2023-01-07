@@ -1,12 +1,14 @@
-use std::ops::{Add, Div, Mul, Neg, Sub};
+use std::ops::{Add, Div, Index, IndexMut, Mul, Neg, Sub};
 
-use crate::matrices::Matrix;
+use crate::basic::matrices::Matrix;
 
+/// This structure, as the name suggests, represents a 3D vector, with its x, y, and z components.
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub struct Vec3D {
-    pub components: [f64; 3]
+    components: [f64; 3]
 }
 
+/// General trait to define dot products.
 pub trait Dot where Self: Copy {
 
     fn dot(self, rhs: Self) -> f64;
@@ -23,24 +25,41 @@ pub trait Dot where Self: Copy {
 
 impl Vec3D {
 
+    pub const ZERO: Self = Self::zero();
+    pub const X: Self = Self::unit_x(1.0);
+    pub const Y: Self = Self::unit_y(1.0);
+    pub const Z: Self = Self::unit_z(1.0);
+
     pub const fn zero() -> Self {
         Self::new(0.0, 0.0, 0.0)
+    }
+    pub const fn unit_x(l: f64) -> Self {
+        Self::new(l, 0.0, 0.0)
+    }
+    pub const fn unit_y(l: f64) -> Self {
+        Self::new(0.0, l, 0.0)
+    }
+    pub const fn unit_z(l: f64) -> Self {
+        Self::new(0.0, 0.0, l)
     }
 
     pub const fn new(x: f64, y: f64, z: f64) -> Self {
         Vec3D { components: [x, y, z] }
     }
 
-    pub const fn x(&self) -> f64 {
-        self.components[0]
+    #[inline]
+    pub fn x(&self) -> f64 {
+        self[0]
     }
 
-    pub const fn y(&self) -> f64 {
-        self.components[1]
+    #[inline]
+    pub fn y(&self) -> f64 {
+        self[1]
     }
 
-    pub const fn z(&self) -> f64 {
-        self.components[2]
+    #[inline]
+    pub fn z(&self) -> f64 {
+        self[2]
     }
 
     pub fn unit(&self) -> Self {
@@ -66,6 +85,24 @@ impl Vec3D {
             rhs.unit()
         };
         unit_rhs * self.dot(&unit_rhs)
+    }
+
+}
+
+impl Index<usize> for Vec3D {
+
+    type Output = f64;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.components[index]
+    }
+
+}
+
+impl IndexMut<usize> for Vec3D {
+
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.components[index]
     }
 
 }
@@ -238,8 +275,8 @@ impl Mul<&Matrix> for &Vec3D {
 
 #[cfg(test)]
 pub mod tests {
-
     use proptest::{*, strategy::*};
+
     use super::*;
 
     prop_compose! {

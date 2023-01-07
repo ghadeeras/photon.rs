@@ -1,4 +1,4 @@
-use crate::vectors::Vec3D;
+use crate::basic::vectors::Vec3D;
 
 pub mod lambertian;
 
@@ -18,7 +18,7 @@ pub mod lambertian;
 /// # use std::f64::consts::PI;
 /// # use photon::brdfs::{BRDF, lambertian::Lambertian};
 /// # use photon::{EPSILON, rough_equality};
-/// # use photon::vectors::{Vec3D, Dot};
+/// # use photon::basic::vectors::{Vec3D, Dot};
 ///
 /// # let normal = Vec3D::new(1.0, 2.0, 3.0).unit();
 ///

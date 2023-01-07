@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use crate::matrices::Matrix;
-use crate::vectors::Vec3D;
+use crate::basic::matrices::Matrix;
+use crate::basic::vectors::Vec3D;
 
 pub trait Noise: Send + Sync {
 

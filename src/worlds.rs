@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use crate::colors::Color;
+use crate::basic::colors::Color;
+use crate::basic::rays::Ray;
+use crate::basic::vectors::Vec3D;
 use crate::materials::{Effect, Material};
-use crate::rays::Ray;
 use crate::things::Thing;
-use crate::vectors::Vec3D;
 
 pub trait World: Send + Sync {
 
@@ -25,7 +25,7 @@ pub struct PitchBlack;
 impl World for PitchBlack {
 
     fn trace(&self, _: &Ray) -> Color {
-        Color::black()
+        Color::BLACK
     }
 
 }
@@ -43,14 +43,14 @@ impl<W: World, T: Thing> World for PathTraced<W, T> {
     fn trace(&self, ray: &Ray) -> Color {
         let mut r = ray.clone();
         let mut depth = self.depth;
-        let mut color = Color::white();
+        let mut color = Color::WHITE;
         while depth > 0 {
             match self.subject.shoot(&r, 0.0001, f64::INFINITY) {
                 Some(ref hit) => {
                     let material_holder = hit.texture.material(&hit.hit, hit.geometry, hit.other_side_texture);
                     match material_holder.effect_of(&hit.hit) {
                         Effect::Absorption => {
-                            color = Color::black();
+                            color = Color::BLACK;
                             break;
                         }
                         Effect::Emission(ref c) => {

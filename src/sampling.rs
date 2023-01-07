@@ -3,7 +3,7 @@ use std::f64::consts::{FRAC_1_PI, PI};
 use rand::prelude::Distribution;
 use rand::Rng;
 
-use crate::vectors::{Dot, Vec3D};
+use crate::basic::vectors::{Dot, Vec3D};
 
 pub struct UniformSolidUnitSquare;
 pub struct UniformSolidUnitCircle;
@@ -41,7 +41,9 @@ impl PDF<Vec3D> for UniformSolidUnitSquare {
     }
 
     fn contains(&self, value: &Vec3D) -> bool {
-        let &Vec3D { components: [x, y, z] } = value;
+        let x = value.x();
+        let y = value.y();
+        let z = value.z();
         x >= 0.0 && x < 1.0 && y >= 0.0 && y < 1.0 && z == 0.0
     }
 

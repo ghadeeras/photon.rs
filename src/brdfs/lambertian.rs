@@ -2,10 +2,10 @@ use std::f64::consts::PI;
 
 use rand::{Rng, thread_rng};
 
+use crate::basic::matrices::Matrix;
+use crate::basic::vectors::{Dot, Vec3D};
 use crate::brdfs::BRDF;
-use crate::matrices::Matrix;
 use crate::sampling::UniformSolidUnitSquare;
-use crate::vectors::{Dot, Vec3D};
 
 /// This type represents Lambertian BRDF. It is typically used to implement matte/diffusive
 /// materials.
@@ -56,9 +56,11 @@ impl BRDF for Lambertian {
 
 #[cfg(test)]
 pub mod tests {
-
     use proptest::*;
-    use crate::{rough_equality, vectors::tests::unit_vec3};
+
+    use crate::basic::vectors::tests::unit_vec3;
+    use crate::rough_equality;
+
     use super::*;
 
     prop_compose! {

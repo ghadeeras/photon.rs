@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
+use crate::basic::matrices::Matrix;
+use crate::basic::rays::Ray;
+use crate::basic::vectors::{Dot, Vec3D};
 use crate::geometries::Hit;
-use crate::matrices::Matrix;
-use crate::rays::Ray;
-use crate::vectors::{Dot, Vec3D};
 
 pub trait Transformation: Send + Sync {
 

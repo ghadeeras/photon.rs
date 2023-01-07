@@ -2,9 +2,9 @@ use std::f64::consts::PI;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use crate::rays::Ray;
+use crate::basic::rays::Ray;
+use crate::basic::vectors::{Dot, Vec3D};
 use crate::transforms::{Transformation, Transformed};
-use crate::vectors::{Dot, Vec3D};
 
 pub trait Geometry: Send + Sync {
 
@@ -98,7 +98,9 @@ impl Geometry for Sphere {
     }
 
     fn surface_coordinates(&self, point: &Vec3D) -> Vec3D {
-        let &Vec3D { components: [x, y, z] } = point;
+        let x = point.x();
+        let y = point.y();
+        let z = point.z();
         let a = x.atan2(z) / PI;
         let b = y.atan2((x * x + z * z).sqrt()) / PI;
         Vec3D::new(a, b, 0.0)

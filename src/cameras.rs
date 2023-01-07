@@ -5,11 +5,11 @@ use rand::{Rng, thread_rng};
 use rand::prelude::Distribution;
 use rayon::prelude::*;
 
-use crate::colors::Color;
+use crate::basic::colors::Color;
+use crate::basic::rays::Ray;
+use crate::basic::vectors::Vec3D;
 use crate::images::Image;
-use crate::rays::Ray;
 use crate::sampling::{UniformSolidUnitCircle, UniformSolidUnitSquare};
-use crate::vectors::Vec3D;
 use crate::worlds::World;
 
 pub struct Camera {
@@ -69,7 +69,7 @@ struct CameraPixel<'a> {
 impl<'a> CameraPixel<'a> {
 
     fn estimate_color<W: World>(&self, world: &W, gain: f64) -> Color {
-        let mut color = Color::black();
+        let mut color = Color::BLACK;
         for _ in 0u16 .. self.camera.samples_per_pixel {
             let ray = thread_rng().sample(self);
             color += world.trace(&ray);

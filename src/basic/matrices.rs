@@ -1,6 +1,6 @@
-use std::ops::Mul;
+use std::ops::{Add, Index, IndexMut, Mul, Neg, Sub};
 
-use crate::vectors::{Dot, Vec3D};
+use crate::basic::vectors::{Dot, Vec3D};
 
 #[derive(Clone, Debug)]
 pub struct Matrix {
@@ -15,6 +15,18 @@ impl Matrix {
         }
     }
 
+    pub fn identity() -> Self {
+        Self::diagonal(1.0, 1.0, 1.0)
+    }
+
+    pub fn diagonal(x: f64, y: f64, z: f64) -> Self {
+        Self::new(
+            &Vec3D::new(x, 0.0, 0.0),
+            &Vec3D::new(0.0, y, 0.0),
+            &Vec3D::new(0.0, 0.0, z),
+        )
+    }
+
     pub fn with_z_alignment(z: &Vec3D) -> Self {
         let max_dot = 0.5 * z.length_squared();
         let x1 = Vec3D::new(z.z(), z.x(), z.y());
@@ -27,18 +39,6 @@ impl Matrix {
         let xx = x.reject(&zz, true).unit();
         let yy = zz.cross(&xx);
         Self::new(&xx, &yy, &zz)
-    }
-
-    pub fn identity() -> Self {
-        Self::diagonal(1.0, 1.0, 1.0)
-    }
-
-    pub fn diagonal(x: f64, y: f64, z: f64) -> Self {
-        Self::new(
-            &Vec3D::new(x, 0.0, 0.0),
-            &Vec3D::new(0.0, y, 0.0),
-            &Vec3D::new(0.0, 0.0, z),
-        )
     }
 
     pub fn rotation(axis: &Vec3D, angle: f64) -> Self {
@@ -66,15 +66,15 @@ impl Matrix {
     }
 
     pub fn x(&self) -> &Vec3D {
-        &self.columns[0]
+        &self[0]
     }
 
     pub fn y(&self) -> &Vec3D {
-        &self.columns[1]
+        &self[1]
     }
 
     pub fn z(&self) -> &Vec3D {
-        &self.columns[2]
+        &self[2]
     }
 
     pub fn anti_matrix(&self) -> Matrix {
@@ -86,6 +86,37 @@ impl Matrix {
 
     pub fn det(&self) -> f64 {
         self.x().cross(self.y()).dot(*self.z())
+    }
+
+}
+
+impl Index<usize> for Matrix {
+
+    type Output = Vec3D;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.columns[index]
+    }
+
+}
+
+impl IndexMut<usize> for Matrix {
+
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.columns[index]
+    }
+
+}
+
+impl Neg for &Matrix {
+
+    type Output = Matrix;
+
+    fn neg(self) -> Self::Output {
+        let x = -self.x();
+        let y = -self.y();
+        let z = -self.z();
+        Self::Output::new(&x, &y, &z)
     }
 
 }
@@ -108,6 +139,55 @@ impl Mul<&Matrix> for &Matrix {
         let x = self * rhs.x();
         let y = self * rhs.y();
         let z = self * rhs.z();
+        Self::Output::new(&x, &y, &z)
+    }
+
+}
+
+impl Mul<f64> for &Matrix {
+
+    type Output = Matrix;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        let x = self.x() * rhs;
+        let y = self.y() * rhs;
+        let z = self.z() * rhs;
+        Self::Output::new(&x, &y, &z)
+    }
+
+}
+
+impl Mul<&Matrix> for f64 {
+
+    type Output = Matrix;
+
+    fn mul(self, rhs: &Matrix) -> Self::Output {
+        rhs * self
+    }
+
+}
+
+impl Add<&Matrix> for &Matrix {
+
+    type Output = Matrix;
+
+    fn add(self, rhs: &Matrix) -> Self::Output {
+        let x = self.x() + rhs.x();
+        let y = self.y() + rhs.y();
+        let z = self.z() + rhs.z();
+        Self::Output::new(&x, &y, &z)
+    }
+
+}
+
+impl Sub<&Matrix> for &Matrix {
+
+    type Output = Matrix;
+
+    fn sub(self, rhs: &Matrix) -> Self::Output {
+        let x = self.x() - rhs.x();
+        let y = self.y() - rhs.y();
+        let z = self.z() - rhs.z();
         Self::Output::new(&x, &y, &z)
     }
 

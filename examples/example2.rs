@@ -1,17 +1,17 @@
 use std::f64::consts::{PI, SQRT_2};
 
+use photon::basic::colors::Color;
+use photon::basic::matrices::Matrix;
+use photon::basic::rays::Ray;
+use photon::basic::vectors::{Dot, Vec3D};
 use photon::builders::Building;
 use photon::cameras::{Camera, Exposure, Lens, Sensor};
-use photon::colors::Color;
 use photon::geometries::{Geometry, Hit, Sphere};
 use photon::materials::{Diffusive, Emissive, Material, Reflective, RefractionIndex, Refractive};
-use photon::matrices::Matrix;
 use photon::noise::{Fractal, Noise, Simple};
-use photon::rays::Ray;
 use photon::textures::{Constant, MaterialHolder, Texture};
 use photon::things::Things;
 use photon::transforms::{AffineTransformation, Linear, Translation};
-use photon::vectors::{Dot, Vec3D};
 use photon::worlds::World;
 
 struct Sky;
@@ -24,7 +24,7 @@ impl World for Sky {
 
     fn trace(&self, ray: &Ray) -> Color {
         let alignment_with_galaxy = (1.0 - ray.direction.unit().dot(GALAXY_AXIS.unit()).powf(2.0)).powf(GALAXY_THINNESS);
-        return Color::grey(alignment_with_galaxy * GALAXY_BRIGHTNESS);
+        return Color::grey_shade(alignment_with_galaxy * GALAXY_BRIGHTNESS);
     }
 
 }
@@ -104,7 +104,7 @@ pub fn main() {
     let world = Building(Things(vec![
         Building(Sphere)
             .transformed(Translation::new(1.0, 1.0, 1.0))
-            .with_texture(Constant(Refractive(Color::white(), RefractionIndex::of(1.5))))
+            .with_texture(Constant(Refractive(Color::WHITE, RefractionIndex::of(1.5))))
             .boxed(),
         Building(Sphere)
             .transformed(Linear::scaling(2.0, 2.0, 2.0)
@@ -141,7 +141,7 @@ pub fn main() {
         Building(Sphere)
             .transformed(Linear::scaling(10.0, 10.0, 10.0)
                 .then_displacement_of(20.0, 20.0, 20.0))
-            .with_outer_texture(Constant(Emissive(Color::grey(16.0))))
+            .with_outer_texture(Constant(Emissive(Color::grey_shade(16.0))))
             .boxed(),
     ]))
         .transformed(Translation::new(-0.35, -0.2, -distance))

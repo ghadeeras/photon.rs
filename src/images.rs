@@ -1,6 +1,6 @@
 use image::{ImageBuffer, Rgb};
 
-use crate::colors::Color;
+use crate::basic::colors::Color;
 
 pub struct Image {
 
@@ -13,7 +13,7 @@ pub struct Image {
 impl Image {
 
     pub fn new(width: u16, height: u16) -> Self {
-        Self::init(width, height, |_, _| Color::black())
+        Self::init(width, height, |_, _| Color::BLACK)
     }
 
     pub fn init<F: Fn(usize, usize) -> Color>(width: u16, height: u16, initializer: F) -> Self {
