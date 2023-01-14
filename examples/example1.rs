@@ -2,12 +2,12 @@ use photon::basic::colors::Color;
 use photon::basic::rays::Ray;
 use photon::basic::vectors::{Dot, Vec3D};
 use photon::builders::Building;
-use photon::cameras::{Camera, Exposure, Lens, Sensor};
 use photon::geometries::Sphere;
 use photon::materials::{Diffusive, Reflective, RefractionIndex, Refractive};
 use photon::textures::Constant;
 use photon::things::Things;
 use photon::transforms::{AffineTransformation, Linear, Translation};
+use photon::viewing::{Camera, Exposure, Lens, Sensor};
 use photon::worlds::World;
 
 struct Sky;

@@ -1,4 +1,4 @@
-pub mod cameras;
+pub mod viewing;
 pub mod sampling;
 pub mod images;
 pub mod worlds;
@@ -13,6 +13,11 @@ pub mod noise;
 pub mod basic;
 
 pub const EPSILON: f64 = 2.0 * (f32::EPSILON as f64);
+
+pub enum Holder<'a, T: 'a + ?Sized> {
+    Borrowing(&'a T),
+    Owning(Box<T>)
+}
 
 pub fn rough_equality(a: f64, b: f64) -> bool {
     return (a - b).abs() <= EPSILON;

@@ -1,6 +1,8 @@
+pub use lambertian::*;
+
 use crate::basic::vectors::Vec3D;
 
-pub mod lambertian;
+mod lambertian;
 
 /// The Bidirectional Reflectance Distribution Function representing the scattering of some incident
 /// ray off some hit surface. The ray direction, the surface normal, and the surface material are
@@ -16,7 +18,7 @@ pub mod lambertian;
 /// Example:
 /// ```
 /// # use std::f64::consts::PI;
-/// # use photon::brdfs::{BRDF, lambertian::Lambertian};
+/// # use photon::brdfs::{BRDF, Lambertian};
 /// # use photon::{EPSILON, rough_equality};
 /// # use photon::basic::vectors::{Vec3D, Dot};
 ///

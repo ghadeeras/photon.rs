@@ -5,13 +5,13 @@ use photon::basic::matrices::Matrix;
 use photon::basic::rays::Ray;
 use photon::basic::vectors::{Dot, Vec3D};
 use photon::builders::Building;
-use photon::cameras::{Camera, Exposure, Lens, Sensor};
 use photon::geometries::{Geometry, Hit, Sphere};
-use photon::materials::{Diffusive, Emissive, Material, Reflective, RefractionIndex, Refractive};
+use photon::materials::{Diffusive, Emissive, Material, MaterialHolder, Reflective, RefractionIndex, Refractive};
 use photon::noise::{Fractal, Noise, Simple};
-use photon::textures::{Constant, MaterialHolder, Texture};
+use photon::textures::{Constant, Texture};
 use photon::things::Things;
 use photon::transforms::{AffineTransformation, Linear, Translation};
+use photon::viewing::{Camera, Exposure, Lens, Sensor};
 use photon::worlds::World;
 
 struct Sky;
@@ -38,7 +38,7 @@ impl<W: Material, B: Material> Texture for CheckerBoard<W, B> {
         let point = geometry.surface_coordinates(&hit.local_hit().incident_ray.origin);
         let x = (5.0 * point.x() + 0.5).floor() as i32;
         let y = (5.0 * point.y() + 0.0).floor() as i32;
-        MaterialHolder::Ref(if (x + y) & 1 == 0 { b } else { w })
+        MaterialHolder::Borrowing(if (x + y) & 1 == 0 { b } else { w })
     }
 
 }
@@ -57,7 +57,7 @@ impl Texture for PlanetCrust {
         let noise = self.noise.value_at(&(hit.incident_ray.origin * self.detail)) * 2.0;
         let level = ((noise - noise.floor()) * 2.0 - 1.0).abs();
         let smooth_level = level * level * (3.0 - 2.0 * level);
-        MaterialHolder::New(if smooth_level > self.sea_level {
+        MaterialHolder::Owning(if smooth_level > self.sea_level {
             Box::new(Diffusive(smooth_level * self.land))
         } else {
             Box::new(Reflective(self.sea))
@@ -77,7 +77,7 @@ impl Texture for Woody {
 
     fn material<'a>(&'a self, hit: &'a Hit, _: &'a dyn Geometry, _: &'a dyn Texture) -> MaterialHolder {
         let noise = self.noise.value_at(&(hit.incident_ray.origin * self.detail)) * self.freq;
-        MaterialHolder::New(Box::new(Diffusive(noise.fract() * self.color)))
+        MaterialHolder::Owning(Box::new(Diffusive(noise.fract() * self.color)))
     }
 
 }

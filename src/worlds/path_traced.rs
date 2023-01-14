@@ -1,34 +1,9 @@
-use std::sync::Arc;
-
 use crate::basic::colors::Color;
 use crate::basic::rays::Ray;
 use crate::basic::vectors::Vec3D;
 use crate::materials::{Effect, Material};
 use crate::things::Thing;
-
-pub trait World: Send + Sync {
-
-    fn trace(&self, ray: &Ray) -> Color;
-
-}
-
-impl<W: World> World for Arc<W> {
-
-    fn trace(&self, ray: &Ray) -> Color {
-        self.as_ref().trace(ray)
-    }
-
-}
-
-pub struct PitchBlack;
-
-impl World for PitchBlack {
-
-    fn trace(&self, _: &Ray) -> Color {
-        Color::BLACK
-    }
-
-}
+use crate::worlds::World;
 
 pub struct PathTraced<W: World, T: Thing> {
 
