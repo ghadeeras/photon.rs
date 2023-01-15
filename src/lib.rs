@@ -1,6 +1,6 @@
 pub mod viewing;
 pub mod sampling;
-pub mod images;
+pub mod imaging;
 pub mod worlds;
 pub mod things;
 pub mod geometries;
