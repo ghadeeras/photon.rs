@@ -39,8 +39,5 @@ pub enum Effect {
     Absorption,
     Emission(Color),
     Redirection(Color, Vec3D),
-    Scattering {
-        color: Color,
-        brdf: Box<dyn BRDF>
-    }
+    Scattering(Color, Box<dyn BRDF>),
 }

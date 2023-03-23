@@ -5,7 +5,7 @@ use rand::{Rng, thread_rng};
 use crate::basic::matrices::Matrix;
 use crate::basic::vectors::{Dot, Vec3D};
 use crate::brdfs::BRDF;
-use crate::sampling::UniformSolidUnitSquare;
+use crate::sampling::{PDF, Space, UniformSolidUnitSquare};
 
 /// This type represents Lambertian BRDF. It is typically used to implement matte/diffusive
 /// materials.
@@ -25,13 +25,26 @@ impl Lambertian {
         Lambertian(Matrix::with_z_alignment(surface_normal))
     }
 
+    pub fn normal(&self) -> &Vec3D {
+        let &Lambertian(ref matrix) = self;
+        matrix.z()
+    }
+
 }
 
 const ONE_PI: f64 = 1.0 / PI;
 
 impl BRDF for Lambertian {
 
-    fn sample(&self) -> (Vec3D, f64) {
+    fn narrowness(&self) -> f64 {
+        0.5
+    }
+
+}
+
+impl Space<Vec3D> for Lambertian {
+
+    fn arbitrary_sample_and_pdf(&self) -> (Vec3D, f64) {
         let unit_square_sample = thread_rng().sample(UniformSolidUnitSquare);
         let sin_theta_squared = unit_square_sample.x();
         let sin_theta = sin_theta_squared.sqrt();
@@ -47,9 +60,20 @@ impl BRDF for Lambertian {
         (matrix * &local_direction, cos_theta * ONE_PI)
     }
 
+}
+
+impl PDF<Vec3D> for Lambertian {
+
     fn pdf(&self, direction: &Vec3D) -> f64 {
-        let &Lambertian(ref matrix) = self;
-        matrix.z().dot(direction).max(0.0) * ONE_PI
+        self.normal().dot(direction).max(0.0) * ONE_PI
+    }
+
+    fn contains(&self, direction: &Vec3D) -> bool {
+        self.normal().dot(direction) > 0.0
+    }
+
+    fn strict_pdf(&self, direction: &Vec3D) -> f64 {
+        self.pdf(direction)
     }
 
 }
@@ -73,7 +97,7 @@ pub mod tests {
 
         #[test]
         fn generates_unit_length_directions(lambertian in lambertian()) {
-            let (direction, _) = lambertian.sample();
+            let direction = lambertian.arbitrary_sample();
 
             assert!(rough_equality(direction.length(), 1.0));
         }
@@ -82,7 +106,7 @@ pub mod tests {
         fn generates_directions_above_the_surface(normal in unit_vec3()) {
             let lambertian = Lambertian::new(&normal);
 
-            let (direction, _) = lambertian.sample();
+            let direction = lambertian.arbitrary_sample();
 
             let cos_theta = normal.dot(direction);
             assert!(cos_theta >= 0.0);
@@ -92,7 +116,7 @@ pub mod tests {
         fn generates_directions_with_pdf_proportional_to_cos_theta(normal in unit_vec3()) {
             let lambertian = Lambertian::new(&normal);
 
-            let (direction, pdf) = lambertian.sample();
+            let (direction, pdf) = lambertian.arbitrary_sample_and_pdf();
 
             let cos_theta = direction.dot(normal);
             assert!(rough_equality(pdf, cos_theta / PI));
@@ -102,7 +126,7 @@ pub mod tests {
         fn calculates_pdf_of_a_given_direction(normal in unit_vec3()) {
             let lambertian = Lambertian::new(&normal);
 
-            let direction = lambertian.sample_direction();
+            let direction = lambertian.arbitrary_sample();
             let pdf = lambertian.pdf(&direction);
 
             let cos_theta = direction.dot(normal);

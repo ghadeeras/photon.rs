@@ -9,6 +9,7 @@ use crate::transforms::{Transformation, Transformed};
 
 mod thing;
 mod geometry;
+mod path_traced;
 
 pub struct Building<T>(pub T);
 

@@ -14,7 +14,15 @@ impl Ray {
     }
 
     pub fn at(&self, distance: f64) -> Vec3D {
-        &self.origin + &(distance * &self.direction)
+        self.origin + (distance * self.direction)
+    }
+
+    pub fn with_origin(&self, origin: Vec3D) -> Self {
+        Self::new(origin, self.direction, self.time)
+    }
+
+    pub fn with_direction(&self, direction: Vec3D) -> Self {
+        Self::new(self.origin, direction, self.time)
     }
 
 }

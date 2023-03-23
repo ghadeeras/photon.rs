@@ -145,10 +145,12 @@ pub fn main() {
             .boxed(),
     ]))
         .transformed(Translation::new(-0.35, -0.2, -distance))
-        .with_environment_and_depth(Sky, 16)
+        .path_traced()
+        .with_environment(Sky)
+        .with_depth(16)
         .done();
     let time = std::time::SystemTime::now();
     let image = camera.shoot(&world, 16);
     println!("{:?}", time.elapsed());
-    image.save("_image_2.png");
+    image.save("_image_2_2.png");
 }

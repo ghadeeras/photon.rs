@@ -1,6 +1,7 @@
 pub use lambertian::*;
 
 use crate::basic::vectors::Vec3D;
+use crate::sampling::Space;
 
 mod lambertian;
 
@@ -13,7 +14,7 @@ mod lambertian;
 /// ray hit could produce a distinct BRDF that could then be used to perform one of the following
 /// operations:
 ///  * Sampling: Asking for an arbitrary scatter direction.
-///  * PDF: Asking for the probability distribution at a given direction.
+///  * PDF: Asking for the probability density at a given direction.
 ///
 /// Example:
 /// ```
@@ -21,6 +22,7 @@ mod lambertian;
 /// # use photon::brdfs::{BRDF, Lambertian};
 /// # use photon::{EPSILON, rough_equality};
 /// # use photon::basic::vectors::{Vec3D, Dot};
+/// # use photon::sampling::{Space, PDF};
 ///
 /// # let normal = Vec3D::new(1.0, 2.0, 3.0).unit();
 ///
@@ -28,7 +30,7 @@ mod lambertian;
 /// let lambertian = Lambertian::new(&normal);
 ///
 /// // Sampling
-/// let (direction, pdf) = lambertian.sample();
+/// let (direction, pdf) = lambertian.arbitrary_sample_and_pdf();
 /// let cos = normal.dot(direction);
 ///
 /// assert!(rough_equality(direction.length(), 1.0), "directions should have unit length");
@@ -42,24 +44,8 @@ mod lambertian;
 /// assert!(rough_equality(calculated_pdf, pdf), "we should get same pdf if we pass back the sample direction");
 /// assert!(rough_equality(impossible_pdf, 0.0), "PDF of directions going below the surface is 0");
 /// ```
-pub trait BRDF {
+pub trait BRDF: Space<Vec3D> {
 
-    /// This method returns an arbitrary reflectance direction vector along with its probability
-    /// distribution, since calculating it on the fly could be less costly than calling
-    /// [pdf](BRDF::pdf) afterwards.
-    fn sample(&self) -> (Vec3D, f64);
-
-    /// This method returns the probability density for the specified direction; a measure of how
-    /// likely it is that the incident ray gets scattered in the specified direction. The returned
-    /// value should be positive, and the integral of this function over all directions should give
-    /// 1.0.
-    fn pdf(&self, direction: &Vec3D) -> f64;
-
-    /// This method is Similar to [sample](BRDF::sample), except that it does not return the PDF of
-    /// the direction, which could be more efficient in the cases where the PDF is not needed.
-    fn sample_direction(&self) -> Vec3D {
-        let (direction, _) = self.sample();
-        direction
-    }
+    fn narrowness(&self) -> f64;
 
 }

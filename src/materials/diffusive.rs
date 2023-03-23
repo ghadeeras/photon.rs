@@ -8,11 +8,8 @@ pub struct Diffusive(pub Color);
 impl Material for Diffusive {
 
     fn effect_of(&self, hit: &Hit) -> Effect {
-        let Self(ref color) = self;
-        Effect::Scattering {
-            color: *color,
-            brdf: Box::new(Lambertian::new(&hit.normal))
-        }
+        let &Self(color) = self;
+        Effect::Scattering(color, Box::new(Lambertian::new(&hit.normal)))
     }
 
 }
