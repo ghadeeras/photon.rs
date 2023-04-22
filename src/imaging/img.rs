@@ -5,13 +5,14 @@ use image::ImageBuffer;
 use rayon::prelude::*;
 
 use crate::basic::colors::Color;
-use crate::imaging::PixelPositionIterator;
+use crate::imaging::{Filter, PixelPositionIterator};
 
+#[derive(Clone)]
 pub struct Image {
 
     pixels: Vec<Color>,
-    width: u16,
-    height: u16,
+    pub width: u16,
+    pub height: u16,
 
 }
 
@@ -33,7 +34,7 @@ impl Image {
 
     pub fn init<F: Fn(u16, u16) -> Color>(width: u16, height: u16, initializer: F) -> Self {
         Self {
-            pixels: PixelPositionIterator::new(width, height)
+            pixels: PixelPositionIterator::new(width, [0, width], [0, height])
                 .map(|(i, j, _)| initializer(i, j))
                 .collect(),
             width,
@@ -48,7 +49,7 @@ impl Image {
     {
         let counter = AtomicU16::new(0);
         let supplier_ref = &supplier;
-        let mut image = (0 .. stack_size).into_par_iter()
+        let image: Image = (0 .. stack_size).into_par_iter()
             .map(|_| {
                 let img = supplier_ref();
                 progress(counter.fetch_add(1, Ordering::Relaxed) + 1);
@@ -59,15 +60,29 @@ impl Image {
             })
             .unwrap_or_else(supplier_ref);
         let ratio = 1.0 / (stack_size as f64);
-        image.update_pixels(&|c, _, _| c.mul(ratio).saturated().corrected());
-        image
+        image.map(|c, _, _| c.mul(ratio))
     }
 
-    pub fn update_pixels(&mut self, mapper: &dyn Fn(&Color, u16, u16) -> Color) {
-        for (i, j, l) in self.pixel_position_iterator() {
-            let pixel = &mut self.pixels[l];
-            *pixel = mapper(&pixel, i, j)
+    pub fn bloomed(&self, filter_half_size: u8, depth: u8) -> Image {
+        let filter = Filter::gaussian(filter_half_size, 1.0 / 256.0).normalize();
+        let mut filtered = self.map(|c, _, _| dim(c));
+        for _ in 0..depth {
+            filtered = filter.filter(&filtered);
         }
+        self.blend(&filtered, |c1, c2| sat(&c1) + c2)
+    }
+
+    pub fn to_non_linear_space(&self) -> Image {
+        self.map(|c, _, _| c.saturated().corrected())
+    }
+
+    pub fn map<F: Fn(&Color, u16, u16) -> Color>(&self, mapper: F) -> Image {
+        let mut image = self.clone();
+        for (i, j, l) in self.pixel_position_iterator() {
+            let pixel = &mut image.pixels[l];
+            *pixel = mapper(pixel, i, j)
+        }
+        image
     }
 
     pub fn blend<F: Fn(Color, Color) -> Color>(&self, image: &Image, blender: F) -> Self {
@@ -90,9 +105,35 @@ impl Image {
         buffer.save(file).unwrap_or(());
     }
 
-    fn pixel_position_iterator(&self) -> PixelPositionIterator {
-        PixelPositionIterator::new(self.width, self.height)
+    pub fn pixel_position_iterator(&self) -> PixelPositionIterator {
+        self.pixel_positions_of_rect(0, 0, self.width, self.height)
+    }
+
+    pub fn pixel_positions_of_rect(&self, x1: u16, y1: u16, x2: u16, y2: u16) -> PixelPositionIterator {
+        PixelPositionIterator::new(self.width, [x1, x2], [y1, y2])
+    }
+
+    pub fn pixel_at(&self, item: &(u16, u16, usize)) -> Color {
+        let &(_, _, p) = item;
+        self.pixels[p]
     }
 
 }
 
+fn dim(color: &Color) -> Color {
+    let l = color.luminance();
+    if l > 1.0 {
+        color * ((l - 1.0) / l)
+    } else {
+        Color::BLACK
+    }
+}
+
+fn sat(color: &Color) -> Color {
+    let l = color.luminance();
+    if l > 1.0 {
+        color / l
+    } else {
+        *color
+    }
+}

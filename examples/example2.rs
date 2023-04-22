@@ -150,7 +150,7 @@ pub fn main() {
         .with_depth(16)
         .done();
     let time = std::time::SystemTime::now();
-    let image = camera.shoot(&world, 16);
+    let image = camera.shoot(&world, 16 * 14, 16);
     println!("{:?}", time.elapsed());
     image.save("_image_2_2.png");
 }

@@ -52,7 +52,7 @@ pub fn main() {
         .with_depth(16)
         .done();
     let time = std::time::SystemTime::now();
-    let image = camera.shoot(&world, 16);
+    let image = camera.shoot(&world, 16, 0);
     println!("{:?}", time.elapsed());
     image.save("_image_1.png");
 }

@@ -1,6 +1,7 @@
 pub struct PixelPositionIterator {
-    width: u16,
-    height: u16,
+    new_line_delta: u16,
+    columns: [u16; 2],
+    rows: [u16; 2],
     column: u16,
     row: u16,
     linear: usize
@@ -8,14 +9,23 @@ pub struct PixelPositionIterator {
 
 impl PixelPositionIterator {
 
-    pub fn new(width: u16, height: u16) -> Self {
-        Self{
-            width,
-            height,
-            column: 0,
-            row: 0,
-            linear: 0
+    pub fn new(image_width: u16, columns: [u16; 2], rows: [u16; 2]) -> Self {
+        Self {
+            new_line_delta: image_width - (columns[1] - columns[0]),
+            columns,
+            rows,
+            column: columns[0],
+            row: rows[0],
+            linear: (rows[0] as usize) * (image_width as usize) + (columns[0] as usize)
         }
+    }
+
+    fn width(&self) -> u16 {
+        self.columns[1] - self.columns[0]
+    }
+
+    fn height(&self) -> u16 {
+        self.rows[1] - self.rows[0]
     }
 
 }
@@ -25,13 +35,14 @@ impl Iterator for PixelPositionIterator {
     type Item = (u16, u16, usize);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.row < self.height {
+        if self.row < self.rows[1] {
             let result = Some((self.column, self.row, self.linear));
-            self.linear += 1;
             self.column += 1;
-            if self.column >= self.width {
-                self.column = 0;
+            self.linear += 1;
+            if self.column >= self.columns[1] {
+                self.column = self.columns[0];
                 self.row += 1;
+                self.linear += self.new_line_delta as usize;
             }
             result
         } else {
@@ -40,7 +51,7 @@ impl Iterator for PixelPositionIterator {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let s = (self.width as usize) * (self.height as usize);
+        let s = (self.width() as usize) * (self.height() as usize);
         (s, Some(s))
     }
 

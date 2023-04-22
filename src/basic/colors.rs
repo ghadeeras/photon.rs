@@ -93,10 +93,13 @@ impl Color {
     }
 
     pub fn saturated(&self) -> Self {
-        Color::new(
-            self[0].min(1.0),
-            self[1].min(1.0),
-            self[2].min(1.0),
+        fn sat(c: f64) -> f64 {
+            if c < 1.0 { c * (c * (1.0 - c) + 1.0) } else { 1.0 }
+        }
+        Self::new(
+            sat(self.red()),
+            sat(self.green()),
+            sat(self.blue()),
         )
     }
 
