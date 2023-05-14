@@ -1,3 +1,4 @@
+use crate::filters::{Bloom, ImageFilter};
 use crate::imaging::Image;
 use crate::viewing::{CameraPixel, Exposure, Lens, Sensor};
 use crate::worlds::World;
@@ -12,11 +13,13 @@ pub struct Camera {
 impl Camera {
 
     pub fn shoot<W: World>(&self, world: &W, stack_size: u16, bloom_depth: u8) -> Image {
-        Image::stack(
+        let stacked = Image::stack(
             stack_size,
             || self.shoot_linear(world),
             |counter| println!("Rendered {} frames out of {}", counter, stack_size)
-        ).bloomed(self.bloom_half_size(), bloom_depth).to_non_linear_space()
+        );
+        let bloom = Bloom { half_size: self.bloom_half_size(), depth: bloom_depth };
+        bloom.filter(&stacked).to_non_linear_space()
     }
 
     fn bloom_half_size(&self) -> u8 {

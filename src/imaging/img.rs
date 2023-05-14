@@ -1,41 +1,37 @@
-use std::ops::Mul;
+use std::ops::{Index, IndexMut, Mul};
 use std::sync::atomic::{AtomicU16, Ordering};
 
 use image::ImageBuffer;
 use rayon::prelude::*;
 
 use crate::basic::colors::Color;
-use crate::imaging::{Filter, PixelPositionIterator};
+use crate::imaging::{PixelPosition, PixelPositionIterator};
 
 #[derive(Clone)]
 pub struct Image {
-
     pixels: Vec<Color>,
-    pub width: u16,
-    pub height: u16,
-
+    width: usize,
+    height: usize,
 }
 
 impl Image {
 
-    pub fn new(width: u16, height: u16) -> Self {
+    pub fn new(width: usize, height: usize) -> Self {
         Self::solid(Color::BLACK, width, height)
     }
 
-    pub fn solid(color: Color, width: u16, height: u16) -> Self {
-        let w = width as usize;
-        let h = height as usize;
+    pub fn solid(color: Color, width: usize, height: usize) -> Self {
         Self {
-            pixels: vec![color; w * h],
+            pixels: vec![color; width * height],
             width,
             height,
         }
     }
 
-    pub fn init<F: Fn(u16, u16) -> Color>(width: u16, height: u16, initializer: F) -> Self {
+    pub fn init<F: Fn(usize, usize) -> Color>(width: usize, height: usize, initializer: F) -> Self {
         Self {
-            pixels: PixelPositionIterator::new(width, [0, width], [0, height])
-                .map(|(i, j, _)| initializer(i, j))
+            pixels: PixelPositionIterator::new(width, 0..width, 0..height)
+                .map(|p| initializer(p.column, p.row))
                 .collect(),
             width,
             height
@@ -63,24 +59,33 @@ impl Image {
         image.map(|c, _, _| c.mul(ratio))
     }
 
-    pub fn bloomed(&self, filter_half_size: u8, depth: u8) -> Image {
-        let filter = Filter::gaussian(filter_half_size, 1.0 / 256.0).normalize();
-        let mut filtered = self.map(|c, _, _| dim(c));
-        for _ in 0..depth {
-            filtered = filter.filter(&filtered);
+    pub fn width(&self) -> usize {
+        self.width
+    }
+
+    pub fn height(&self) -> usize {
+        self.height
+    }
+
+    pub fn new_with_same_size(&self) -> Self {
+        Self::new(self.width, self.height)
+    }
+
+    pub fn copy_to(&self, image: &mut Image, iterator: PixelPositionIterator) {
+        for ref p in iterator {
+            image[p] = self[p];
         }
-        self.blend(&filtered, |c1, c2| sat(&c1) + c2)
     }
 
     pub fn to_non_linear_space(&self) -> Image {
         self.map(|c, _, _| c.saturated().corrected())
     }
 
-    pub fn map<F: Fn(&Color, u16, u16) -> Color>(&self, mapper: F) -> Image {
+    pub fn map<F: Fn(&Color, usize, usize) -> Color>(&self, mapper: F) -> Image {
         let mut image = self.clone();
-        for (i, j, l) in self.pixel_position_iterator() {
-            let pixel = &mut image.pixels[l];
-            *pixel = mapper(pixel, i, j)
+        for ref p in self.pixel_position_iterator() {
+            let pixel = &mut image[p];
+            *pixel = mapper(pixel, p.column, p.row)
         }
         image
     }
@@ -90,17 +95,24 @@ impl Image {
         assert_eq!(self.height, image.height);
         Self {
             pixels: self.pixel_position_iterator()
-                .map(|(_, _, p)| blender(self.pixels[p], image.pixels[p]))
+                .map(|ref p| blender(self[p], image[p]))
                 .collect(),
             width: self.width,
             height: self.height
         }
     }
 
+    pub fn blend_into<F: Fn(Color, Color) -> Color>(&self, output: &mut Image, image: &Image, blender: F) {
+        assert_eq!(self.width, image.width);
+        assert_eq!(self.height, image.height);
+        self.pixel_position_iterator()
+            .for_each(|ref p| output[p] = blender(self[p], image[p]));
+    }
+
     pub fn save(&self, file: &str) {
         let mut buffer = ImageBuffer::new(self.width as u32, self.height as u32);
-        for (i, j, l) in self.pixel_position_iterator() {
-            buffer.put_pixel(i as u32, j as u32, self.pixels[l].as_rgb())
+        for ref p in self.pixel_position_iterator() {
+            buffer.put_pixel(p.column as u32, p.row as u32, self[p].as_rgb())
         }
         buffer.save(file).unwrap_or(());
     }
@@ -109,31 +121,25 @@ impl Image {
         self.pixel_positions_of_rect(0, 0, self.width, self.height)
     }
 
-    pub fn pixel_positions_of_rect(&self, x1: u16, y1: u16, x2: u16, y2: u16) -> PixelPositionIterator {
-        PixelPositionIterator::new(self.width, [x1, x2], [y1, y2])
-    }
-
-    pub fn pixel_at(&self, item: &(u16, u16, usize)) -> Color {
-        let &(_, _, p) = item;
-        self.pixels[p]
+    pub fn pixel_positions_of_rect(&self, x1: usize, y1: usize, x2: usize, y2: usize) -> PixelPositionIterator {
+        PixelPositionIterator::new(self.width, x1..x2, y1..y2)
     }
 
 }
 
-fn dim(color: &Color) -> Color {
-    let l = color.luminance();
-    if l > 1.0 {
-        color * ((l - 1.0) / l)
-    } else {
-        Color::BLACK
+impl Index<&PixelPosition> for Image {
+
+    type Output = Color;
+
+    fn index(&self, position: &PixelPosition) -> &Self::Output {
+        &self.pixels[position.linear]
     }
 }
 
-fn sat(color: &Color) -> Color {
-    let l = color.luminance();
-    if l > 1.0 {
-        color / l
-    } else {
-        *color
+impl IndexMut<&PixelPosition> for Image {
+
+    fn index_mut(&mut self, position: &PixelPosition) -> &mut Self::Output {
+        &mut self.pixels[position.linear]
     }
+
 }

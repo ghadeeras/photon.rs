@@ -11,6 +11,7 @@ pub mod brdfs;
 pub mod builders;
 pub mod noise;
 pub mod basic;
+pub mod filters;
 
 pub const EPSILON: f64 = 2.0 * (f32::EPSILON as f64);
 
@@ -20,5 +21,5 @@ pub enum Holder<'a, T: 'a + ?Sized> {
 }
 
 pub fn rough_equality(a: f64, b: f64) -> bool {
-    return (a - b).abs() <= EPSILON;
+    (a - b).abs() <= EPSILON
 }

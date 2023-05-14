@@ -1,8 +1,8 @@
 use crate::viewing::Pixel;
 
 pub struct Sensor {
-    pub width: u16,
-    pub height: u16,
+    pub width: usize,
+    pub height: usize,
     pub gain: f64,
 
     aspect: f64,
@@ -11,7 +11,7 @@ pub struct Sensor {
 
 impl Sensor {
 
-    pub fn new(width: u16, height: u16, gain: f64) -> Self {
+    pub fn new(width: usize, height: usize, gain: f64) -> Self {
         Self {
             width,
             height,
