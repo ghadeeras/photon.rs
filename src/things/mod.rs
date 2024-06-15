@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 pub use atomic::*;
 pub use composite::*;
-pub use transformed::*;
 
 use crate::basic::rays::Ray;
 use crate::geometries::{Geometry, Hit};

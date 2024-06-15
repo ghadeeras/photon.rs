@@ -2,7 +2,6 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 pub use sphere::*;
-pub use transformed::*;
 
 use crate::basic::rays::Ray;
 use crate::basic::vectors::Vec3D;

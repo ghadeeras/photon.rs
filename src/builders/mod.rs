@@ -2,9 +2,6 @@
 
 use std::sync::Arc;
 
-pub use geometry::*;
-pub use thing::*;
-
 use crate::transforms::{Transformation, Transformed};
 
 mod thing;
