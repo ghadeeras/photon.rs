@@ -24,7 +24,7 @@ impl World for Sky {
 
     fn trace(&self, ray: &Ray) -> Color {
         let alignment_with_galaxy = (1.0 - ray.direction.unit().dot(GALAXY_AXIS.unit()).powf(2.0)).powf(GALAXY_THINNESS);
-        return Color::grey_shade(alignment_with_galaxy * GALAXY_BRIGHTNESS);
+        Color::grey_shade(alignment_with_galaxy * GALAXY_BRIGHTNESS)
     }
 
 }
@@ -34,7 +34,7 @@ struct CheckerBoard<W: Material, B: Material>(W, B);
 impl<W: Material, B: Material> Texture for CheckerBoard<W, B> {
 
     fn material<'a>(&'a self, hit: &'a Hit, geometry: &'a dyn Geometry, _: &'a dyn Texture) -> MaterialHolder {
-        let &Self(ref w, ref b) = self;
+        let Self(w, b) = self;
         let point = geometry.surface_coordinates(&hit.local_hit().incident_ray.origin);
         let x = (5.0 * point.x() + 0.5).floor() as i32;
         let y = (5.0 * point.y() + 0.0).floor() as i32;
