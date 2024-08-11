@@ -44,28 +44,28 @@ impl Kernel1D {
     }
 
     pub fn size(&self) -> usize {
-        let &Self(_, ref weights) = self;
+        let Self(_, ref weights) = self;
         weights.len()
     }
 
     pub fn weights_sum(&self) -> f64 {
-        let &Self(_, ref weights) = self;
+        let Self(_, ref weights) = self;
         weights.iter().sum::<f64>()
     }
 
     pub fn normalize(&self) -> Self {
-        let &Self(orientation, ref weights) = self;
+        let Self(ref orientation, ref weights) = self;
         let sum = self.weights_sum();
-        Self(orientation, weights.iter().map(|w| w / sum).collect())
+        Self(*orientation, weights.iter().map(|w| w / sum).collect())
     }
 
     pub fn as_vertical(&self) -> Self {
-        let &Self(_, ref weights) = self;
+        let Self(_, ref weights) = self;
         Self(Vertical, weights.clone())
     }
 
     pub fn as_horizontal(&self) -> Self {
-        let &Self(_, ref weights) = self;
+        let Self(_, ref weights) = self;
         Self(Vertical, weights.clone())
     }
 

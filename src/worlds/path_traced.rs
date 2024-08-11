@@ -1,4 +1,4 @@
-use rand::{Rng, thread_rng};
+use rand::random;
 
 use crate::basic::colors::Color;
 use crate::basic::rays::Ray;
@@ -71,7 +71,7 @@ pub trait ImportantDirectionSampler: Send + Sync {
     fn sample_direction_from(&self, position: &Vec3D, brdf: &dyn BRDF) -> (Vec3D, f64) {
         let directions = self.important_directions_at(position);
         let narrowness = brdf.narrowness();
-        let dice: f64 = thread_rng().gen();
+        let dice: f64 = random();
         let (direction, dir_pdf, brdf_pdf) = if dice < narrowness {
             let (direction, brdf_pdf) = brdf.arbitrary_sample_and_pdf();
             let dir_pdf = directions.pdf(&direction);

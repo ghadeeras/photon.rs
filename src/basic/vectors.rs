@@ -66,7 +66,31 @@ impl Vec3D {
         self / self.length()
     }
 
-    pub fn cross(&self, rhs: &Vec3D) -> Vec3D {
+    pub fn plus(&self, rhs: &Self) -> Self {
+        Self::new(
+            self.x() + rhs.x(),
+            self.y() + rhs.y(),
+            self.z() + rhs.z(),
+        )
+    }
+
+    pub fn minus(&self, rhs: &Self) -> Self {
+        Self::new(
+            self.x() - rhs.x(),
+            self.y() - rhs.y(),
+            self.z() - rhs.z(),
+        )
+    }
+
+    pub fn scale_by(&self, rhs: f64) -> Self {
+        Self::new(
+            self.x() * rhs,
+            self.y() * rhs,
+            self.z() * rhs,
+        )
+    }
+
+    pub fn cross(&self, rhs: &Self) -> Vec3D {
         Vec3D::new(
             self.y() * rhs.z() - self.z() * rhs.y(),
             self.z() * rhs.x() - self.x() * rhs.z(),
@@ -128,11 +152,7 @@ impl Add for &Vec3D {
     type Output = Vec3D;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Self::Output::new(
-            self.x() + rhs.x(),
-            self.y() + rhs.y(),
-            self.z() + rhs.z(),
-        )
+        self.plus(rhs)
     }
 
 }
@@ -142,7 +162,7 @@ impl Add for Vec3D {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        &self + &rhs
+        self.plus(&rhs)
     }
 
 }
@@ -152,11 +172,7 @@ impl Sub for &Vec3D {
     type Output = Vec3D;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Self::Output::new(
-            self.x() - rhs.x(),
-            self.y() - rhs.y(),
-            self.z() - rhs.z(),
-        )
+        self.minus(rhs)
     }
 
 }
@@ -166,7 +182,7 @@ impl Sub for Vec3D {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        &self - &rhs
+        self.minus(&rhs)
     }
 
 }
@@ -214,7 +230,7 @@ impl Mul<f64> for Vec3D {
     type Output = Self;
 
     fn mul(self, rhs: f64) -> Self::Output {
-        &self * rhs
+        self.scale_by(rhs)
     }
 
 }
@@ -224,7 +240,7 @@ impl Mul<&Vec3D> for f64 {
     type Output = Vec3D;
 
     fn mul(self, rhs: &Vec3D) -> Self::Output {
-        rhs * self
+        rhs.scale_by(self)
     }
 
 }
@@ -234,7 +250,7 @@ impl Mul<Vec3D> for f64 {
     type Output = Vec3D;
 
     fn mul(self, rhs: Vec3D) -> Self::Output {
-        &rhs * self
+        rhs.scale_by(self)
     }
 
 }
@@ -244,7 +260,7 @@ impl Div<f64> for &Vec3D {
     type Output = Vec3D;
 
     fn div(self, rhs: f64) -> Self::Output {
-        self * (1.0 / rhs)
+        self.scale_by(1.0 / rhs)
     }
 
 }
@@ -254,7 +270,7 @@ impl Div<f64> for Vec3D {
     type Output = Self;
 
     fn div(self, rhs: f64) -> Self::Output {
-        &self / rhs
+        self.scale_by(1.0 / rhs)
     }
 
 }

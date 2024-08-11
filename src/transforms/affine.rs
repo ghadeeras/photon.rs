@@ -9,12 +9,12 @@ pub struct Affine(pub Linear, pub Translation);
 impl Transformation for Affine {
 
     fn to_local(&self, ray: &Ray) -> Ray {
-        let &Affine(ref linear, ref translation) = self;
+        let Affine(ref linear, ref translation) = self;
         linear.to_local(&translation.to_local(ray))
     }
 
     fn to_global(&self, hit: &Hit) -> Hit {
-        let &Affine(ref linear, ref translation) = self;
+        let Affine(ref linear, ref translation) = self;
         translation.to_global(&linear.to_global(hit))
     }
 

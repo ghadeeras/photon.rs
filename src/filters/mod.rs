@@ -71,7 +71,7 @@ impl<F: FilteringPipeLine> ImageFilter for Composite<F> {
     }
 
     fn decompose(&self) -> SubFilters<'_> {
-        let &Composite(ref f) = self;
+        let Composite(ref f) = self;
         f.components()
     }
 

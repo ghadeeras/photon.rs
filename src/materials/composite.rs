@@ -9,7 +9,7 @@ pub struct Composite(Vec<(Box<dyn Material>, f64)>);
 impl Material for Composite {
 
     fn effect_of(&self, hit: &Hit) -> Effect {
-        let &Self(ref materials) = self;
+        let Self(ref materials) = self;
         let choice: f64 = thread_rng().gen();
         let mut sum = 0.0;
         for (material, weight) in materials {

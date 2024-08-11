@@ -38,7 +38,7 @@ impl Transformation for Linear {
     }
 
     fn to_global(&self, hit: &Hit) -> Hit {
-        let &Linear(ref matrix, ref anti_matrix, _) = self;
+        let Linear(ref matrix, ref anti_matrix, _) = self;
         let origin = matrix * &hit.incident_ray.origin;
         let direction = matrix * &hit.incident_ray.direction;
         let ray = Ray::new(origin, direction, hit.incident_ray.time);

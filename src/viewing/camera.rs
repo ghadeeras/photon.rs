@@ -33,7 +33,7 @@ impl Camera {
         let height = self.sensor.height;
         let gain = self.sensor.gain / (self.samples_per_pixel as f64);
         Image::init(width, height, |i, j| {
-            let pixel = self.pixel(i as usize, j as usize);
+            let pixel = self.pixel(i, j);
             pixel.estimate_color(world, gain)
         })
     }

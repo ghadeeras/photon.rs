@@ -31,7 +31,7 @@ impl Matrix {
         let max_dot = 0.5 * z.length_squared();
         let x1 = Vec3D::new(z.z(), z.x(), z.y());
         let x2 = if z.dot(&x1) < max_dot { x1 } else { Vec3D::new(z.x(), -2.0 * z.y(), z.z()) };
-        Self::with_z_and_x_alignment(&z, &x2)
+        Self::with_z_and_x_alignment(z, &x2)
     }
 
     pub fn with_z_and_x_alignment(z: &Vec3D, x: &Vec3D) -> Self {

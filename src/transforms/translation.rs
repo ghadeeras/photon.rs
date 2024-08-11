@@ -17,12 +17,12 @@ impl Translation {
 impl Transformation for Translation {
 
     fn to_local(&self, ray: &Ray) -> Ray {
-        let &Translation(ref displacement) = self;
+        let Translation(ref displacement) = self;
         Ray::new(&ray.origin - displacement, ray.direction, ray.time)
     }
 
     fn to_global(&self, hit: &Hit) -> Hit {
-        let &Translation(ref displacement) = self;
+        let Translation(ref displacement) = self;
         let ray = Ray::new(&hit.incident_ray.origin + displacement, hit.incident_ray.direction, hit.incident_ray.time);
         hit.local_hit().transformed_as(ray, hit.normal)
     }

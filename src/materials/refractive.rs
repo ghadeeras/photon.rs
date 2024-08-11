@@ -11,7 +11,7 @@ pub struct RefractionIndex(f64, f64, f64);
 impl Material for Refractive {
 
     fn effect_of(&self, hit: &Hit) -> Effect {
-        let &Self(ref color, ref index) = self;
+        let Self(ref color, ref index) = self;
         let direction = Self::redirection(&hit.incident_ray.direction, &hit.normal.unit(), index, hit.outside);
         Effect::Redirection(*color, direction)
     }

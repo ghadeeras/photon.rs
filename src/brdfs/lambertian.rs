@@ -26,7 +26,7 @@ impl Lambertian {
     }
 
     pub fn normal(&self) -> &Vec3D {
-        let &Lambertian(ref matrix) = self;
+        let Lambertian(ref matrix) = self;
         matrix.z()
     }
 
@@ -51,7 +51,7 @@ impl Space<Vec3D> for Lambertian {
         let cos_theta = (1.0 - sin_theta_squared).sqrt();
         let phi = 2.0 * PI * unit_square_sample.y();
         let (sin_phi, cos_phi) = phi.sin_cos();
-        let &Lambertian(ref matrix) = self;
+        let Lambertian(ref matrix) = self;
         let local_direction = Vec3D::new(
             sin_theta * cos_phi,
             sin_theta * sin_phi,

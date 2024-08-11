@@ -115,6 +115,29 @@ impl Color {
         Rgb(self.components.map(|c| (c * 255.0).round() as u8))
     }
 
+    pub fn plus(&self, rhs: &Self) -> Self {
+        Self::new(
+            self[0] + rhs[0],
+            self[1] + rhs[1],
+            self[2] + rhs[2],
+        )
+    }
+
+    pub fn times(&self, rhs: f64) -> Self {
+        Self::new(
+            self[0] * rhs,
+            self[1] * rhs,
+            self[2] * rhs,
+        )
+    }
+
+    pub fn modulate(&self, rhs: &Self) -> Self {
+        Self::new(
+            self[0] * rhs[0],
+            self[1] * rhs[1],
+            self[2] * rhs[2],
+        )
+    }
 }
 
 impl Index<usize> for Color {
@@ -158,11 +181,7 @@ impl Add for &Color {
     type Output = Color;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Self::Output::new(
-            self[0] + rhs[0],
-            self[1] + rhs[1],
-            self[2] + rhs[2],
-        )
+        self.plus(rhs)
     }
 
 }
@@ -172,7 +191,7 @@ impl Add for Color {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        &self + &rhs
+        self.plus(&rhs)
     }
 
 }
@@ -210,11 +229,7 @@ impl Mul<&Color> for &Color {
     type Output = Color;
 
     fn mul(self, rhs: &Color) -> Self::Output {
-        Self::Output::new(
-            self[0] * rhs[0],
-            self[1] * rhs[1],
-            self[2] * rhs[2],
-        )
+        self.modulate(rhs)
     }
 
 }
@@ -224,7 +239,7 @@ impl Mul<Color> for Color {
     type Output = Color;
 
     fn mul(self, rhs: Color) -> Self::Output {
-        &rhs * &self
+        self.modulate(&rhs)
     }
 
 }
@@ -248,7 +263,7 @@ impl Mul<f64> for Color {
     type Output = Self;
 
     fn mul(self, rhs: f64) -> Self::Output {
-        &self * rhs
+        self.times(rhs)
     }
 
 }
@@ -258,7 +273,7 @@ impl Mul<&Color> for f64 {
     type Output = Color;
 
     fn mul(self, rhs: &Color) -> Self::Output {
-        rhs * self
+        rhs.times(self)
     }
 
 }
@@ -268,7 +283,7 @@ impl Mul<Color> for f64 {
     type Output = Color;
 
     fn mul(self, rhs: Color) -> Self::Output {
-        &rhs * self
+        rhs.times(self)
     }
 
 }
@@ -278,7 +293,7 @@ impl Div<f64> for &Color {
     type Output = Color;
 
     fn div(self, rhs: f64) -> Self::Output {
-        self * (1.0 / rhs)
+        self.times(1.0 / rhs)
     }
 
 }
@@ -288,7 +303,7 @@ impl Div<f64> for Color {
     type Output = Self;
 
     fn div(self, rhs: f64) -> Self::Output {
-        &self / rhs
+        self.times(1.0 / rhs)
     }
 
 }

@@ -25,19 +25,19 @@ impl Kernel2D {
     }
 
     pub fn size(&self) -> u16 {
-        let &Self(ref weights) = self;
+        let Self(ref weights) = self;
         weights.len() as u16
     }
 
     pub fn weights_sum(&self) -> f64 {
-        let &Self(ref weights) = self;
+        let Self(ref weights) = self;
         weights.iter()
             .map(|row| row.iter().sum::<f64>())
             .sum::<f64>()
     }
 
     pub fn normalize(&self) -> Kernel2D {
-        let &Self(ref weights) = self;
+        let Self(ref weights) = self;
         let sum = self.weights_sum();
         let half_size = self.half_size() as usize;
         Self::new(self.half_size(), |x, y| {
@@ -52,7 +52,7 @@ impl Kernel2D {
 impl Kernel for Kernel2D {
 
     fn apply_at(&self, x: usize, y: usize, input: &Image) -> Color {
-        let &Self(ref weights) = self;
+        let Self(ref weights) = self;
         let hs = self.half_size() as usize;
         let x0 = x - hs;
         let y0 = y - hs;

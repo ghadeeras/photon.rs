@@ -26,7 +26,7 @@ impl PDF<Vec3D> for UniformSolidUnitSquare {
         let x = value.x();
         let y = value.y();
         let z = value.z();
-        x >= 0.0 && x < 1.0 && y >= 0.0 && y < 1.0 && z == 0.0
+        (0.0 ..  1.0).contains(&x) && (0.0 ..1.0).contains(&y) && z == 0.0
     }
 
 }
