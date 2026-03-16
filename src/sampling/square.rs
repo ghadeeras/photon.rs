@@ -1,5 +1,5 @@
 use rand::prelude::Distribution;
-use rand::Rng;
+use rand::{Rng, RngExt};
 
 use crate::basic::vectors::Vec3D;
 use crate::sampling::PDF;
@@ -9,8 +9,8 @@ pub struct UniformSolidUnitSquare;
 impl Distribution<Vec3D> for UniformSolidUnitSquare {
 
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Vec3D {
-        let x = rng.gen();
-        let y = rng.gen();
+        let x = rng.random();
+        let y = rng.random();
         Vec3D::new(x, y, 0.0)
     }
 

@@ -1,11 +1,11 @@
 use std::f64::consts::PI;
 
-use rand::{Rng, thread_rng};
+use rand::{rng, RngExt};
 
 use crate::basic::matrices::Matrix;
 use crate::basic::vectors::{Dot, Vec3D};
 use crate::brdfs::BRDF;
-use crate::sampling::{PDF, Space, UniformSolidUnitSquare};
+use crate::sampling::{Space, UniformSolidUnitSquare, PDF};
 
 /// This type represents Lambertian BRDF. It is typically used to implement matte/diffusive
 /// materials.
@@ -45,7 +45,7 @@ impl BRDF for Lambertian {
 impl Space<Vec3D> for Lambertian {
 
     fn arbitrary_sample_and_pdf(&self) -> (Vec3D, f64) {
-        let unit_square_sample = thread_rng().sample(UniformSolidUnitSquare);
+        let unit_square_sample = rng().sample(UniformSolidUnitSquare);
         let sin_theta_squared = unit_square_sample.x();
         let sin_theta = sin_theta_squared.sqrt();
         let cos_theta = (1.0 - sin_theta_squared).sqrt();

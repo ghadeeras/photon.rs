@@ -1,4 +1,4 @@
-use rand::{Rng, thread_rng};
+use rand::{rng, RngExt};
 
 use crate::basic::colors::Color;
 use crate::basic::vectors::{Dot, Vec3D};
@@ -40,7 +40,7 @@ impl Refractive {
         let refraction_perpendicular_component_length_squared = incident_or_refraction_length_squared - refraction_tangent_component.length_squared();
         if refraction_perpendicular_component_length_squared >= 0.0 {
             let cos_angle = (incident_perpendicular_component.length_squared() / incident_or_refraction_length_squared).sqrt();
-            if thread_rng().gen::<f64>() >= index.schlick_reflectance(cos_angle) {
+            if rng().random::<f64>() >= index.schlick_reflectance(cos_angle) {
                 refraction_perpendicular_component_length_squared
             } else {
                 -1.0

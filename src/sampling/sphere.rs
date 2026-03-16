@@ -1,11 +1,11 @@
 use std::f64::consts::{FRAC_1_PI, PI};
 
-use rand::{Rng, thread_rng};
 use rand::prelude::Distribution;
+use rand::{rng, Rng, RngExt};
 
 use crate::basic::vectors::{Dot, Vec3D};
 use crate::rough_equality;
-use crate::sampling::{PDF, Space, UniformSolidUnitSquare};
+use crate::sampling::{Space, UniformSolidUnitSquare, PDF};
 
 pub struct UniformUnitSphere;
 
@@ -25,7 +25,7 @@ impl Space<Vec3D> for UniformUnitSphere {
     }
 
     fn arbitrary_sample(&self) -> Vec3D {
-        Self::do_sample(&mut thread_rng())
+        Self::do_sample(&mut rng())
     }
 
 }

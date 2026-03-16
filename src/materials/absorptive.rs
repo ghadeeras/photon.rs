@@ -1,6 +1,6 @@
 use crate::geometries::Hit;
-use crate::materials::{Effect, Material};
 use crate::materials::Effect::Absorption;
+use crate::materials::{Effect, Material};
 
 pub struct Absorptive;
 

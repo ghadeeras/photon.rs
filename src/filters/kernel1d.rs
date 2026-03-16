@@ -1,6 +1,6 @@
 use crate::basic::colors::Color;
-use crate::filters::Kernel;
 use crate::filters::kernel1d::Orientation::{Horizontal, Vertical};
+use crate::filters::Kernel;
 use crate::imaging::Image;
 
 pub struct Kernel1D(Orientation, Vec<f64>);

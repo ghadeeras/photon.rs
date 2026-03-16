@@ -33,7 +33,7 @@ struct CheckerBoard<W: Material, B: Material>(W, B);
 
 impl<W: Material, B: Material> Texture for CheckerBoard<W, B> {
 
-    fn material<'a>(&'a self, hit: &'a Hit, geometry: &'a dyn Geometry, _: &'a dyn Texture) -> MaterialHolder {
+    fn material<'a>(&'a self, hit: &'a Hit, geometry: &'a dyn Geometry, _: &'a dyn Texture) -> MaterialHolder<'a> {
         let Self(w, b) = self;
         let point = geometry.surface_coordinates(&hit.local_hit().incident_ray.origin);
         let x = (5.0 * point.x() + 0.5).floor() as i32;
@@ -53,7 +53,7 @@ struct PlanetCrust {
 
 impl Texture for PlanetCrust {
 
-    fn material<'a>(&'a self, hit: &'a Hit, _: &'a dyn Geometry, _: &'a dyn Texture) -> MaterialHolder {
+    fn material<'a>(&'a self, hit: &'a Hit, _: &'a dyn Geometry, _: &'a dyn Texture) -> MaterialHolder<'a> {
         let noise = self.noise.value_at(&(hit.incident_ray.origin * self.detail)) * 2.0;
         let level = ((noise - noise.floor()) * 2.0 - 1.0).abs();
         let smooth_level = level * level * (3.0 - 2.0 * level);
@@ -75,7 +75,7 @@ struct Woody {
 
 impl Texture for Woody {
 
-    fn material<'a>(&'a self, hit: &'a Hit, _: &'a dyn Geometry, _: &'a dyn Texture) -> MaterialHolder {
+    fn material<'a>(&'a self, hit: &'a Hit, _: &'a dyn Geometry, _: &'a dyn Texture) -> MaterialHolder<'a> {
         let noise = self.noise.value_at(&(hit.incident_ray.origin * self.detail)) * self.freq;
         MaterialHolder::Owning(Box::new(Diffusive(noise.fract() * self.color)))
     }

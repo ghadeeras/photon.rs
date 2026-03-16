@@ -291,7 +291,7 @@ impl Mul<&Matrix> for &Vec3D {
 
 #[cfg(test)]
 pub mod tests {
-    use proptest::{*, strategy::*};
+    use proptest::{strategy::*, *};
 
     use super::*;
 

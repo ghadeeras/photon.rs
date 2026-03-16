@@ -1,6 +1,6 @@
 use crate::geometries::Hit;
-use crate::Holder;
 use crate::materials::{Effect, Material};
+use crate::Holder;
 
 pub type MaterialHolder<'a> = Holder<'a, dyn Material>;
 

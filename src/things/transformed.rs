@@ -4,7 +4,7 @@ use crate::transforms::{Transformation, Transformed};
 
 impl<T: Thing, F: Transformation> Thing for Transformed<T, F> {
 
-    fn shoot(&self, ray: &Ray, min: f64, max: f64) -> Option<MaterialHit> {
+    fn shoot(&self, ray: &Ray, min: f64, max: f64) -> Option<MaterialHit<'_>> {
         let local_ray = self.transformation.to_local(ray);
         let local_hit = self.subject.shoot(&local_ray, min, max);
         local_hit.map(|ref h| MaterialHit {

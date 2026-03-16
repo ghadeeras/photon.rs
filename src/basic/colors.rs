@@ -310,7 +310,7 @@ impl Div<f64> for Color {
 
 #[cfg(test)]
 pub mod tests {
-    use proptest::{*, strategy::*};
+    use proptest::{strategy::*, *};
 
     use super::*;
 

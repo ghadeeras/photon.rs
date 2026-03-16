@@ -6,7 +6,7 @@ pub struct Black;
 
 impl Texture for Black {
 
-    fn material<'a>(&'a self, _: &'a Hit, _: &'a dyn Geometry, _: &'a dyn Texture) -> MaterialHolder {
+    fn material<'a>(&'a self, _: &'a Hit, _: &'a dyn Geometry, _: &'a dyn Texture) -> MaterialHolder<'a> {
         return MaterialHolder::Borrowing(&Absorptive)
     }
 

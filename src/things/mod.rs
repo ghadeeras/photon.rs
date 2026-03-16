@@ -13,13 +13,13 @@ mod transformed;
 
 pub trait Thing: Send + Sync {
 
-    fn shoot(&self, ray: &Ray, min: f64, max: f64) -> Option<MaterialHit>;
+    fn shoot(&self, ray: &Ray, min: f64, max: f64) -> Option<MaterialHit<'_>>;
 
 }
 
 impl<T: Thing> Thing for Arc<T> {
 
-    fn shoot(&self, ray: &Ray, min: f64, max: f64) -> Option<MaterialHit> {
+    fn shoot(&self, ray: &Ray, min: f64, max: f64) -> Option<MaterialHit<'_>> {
         self.as_ref().shoot(ray, min, max)
     }
 

@@ -5,7 +5,7 @@ pub struct Things(pub Vec<Box<dyn Thing>>);
 
 impl Thing for Things {
 
-    fn shoot(&self, ray: &Ray, min: f64, max: f64) -> Option<MaterialHit> {
+    fn shoot(&self, ray: &Ray, min: f64, max: f64) -> Option<MaterialHit<'_>> {
         let mut hit = None;
         let mut max_distance = max;
         let Things(ref things) = self;

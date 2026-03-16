@@ -1,5 +1,5 @@
-use rand::{Rng, thread_rng};
 use rand::prelude::Distribution;
+use rand::{rng, Rng, RngExt};
 
 use crate::basic::colors::Color;
 use crate::basic::rays::Ray;
@@ -18,7 +18,7 @@ impl<'a> CameraPixel<'a> {
     pub fn estimate_color<W: World>(&self, world: &W, gain: f64) -> Color {
         let mut color = Color::BLACK;
         for _ in 0u16 .. self.camera.samples_per_pixel {
-            let ray = thread_rng().sample(self);
+            let ray = rng().sample(self);
             color += world.trace(&ray);
         }
         color * gain

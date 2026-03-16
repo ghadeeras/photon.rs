@@ -38,7 +38,7 @@ impl Camera {
         })
     }
 
-    fn pixel(&self, x: usize, y: usize) -> CameraPixel {
+    fn pixel(&self, x: usize, y: usize) -> CameraPixel<'_> {
         CameraPixel {
             camera: self,
             pixel: self.sensor.pixel(x, y)

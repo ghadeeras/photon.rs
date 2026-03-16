@@ -1,10 +1,10 @@
 use std::f64::consts::{FRAC_1_PI, PI};
 
 use rand::prelude::Distribution;
-use rand::Rng;
+use rand::{Rng, RngExt};
 
 use crate::basic::vectors::{Dot, Vec3D};
-use crate::sampling::{PDF, UniformSolidUnitSquare};
+use crate::sampling::{UniformSolidUnitSquare, PDF};
 
 pub struct UniformSolidUnitCircle;
 

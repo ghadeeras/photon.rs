@@ -1,5 +1,5 @@
 use rand::prelude::Distribution;
-use rand::Rng;
+use rand::{Rng, RngExt};
 
 use crate::basic::vectors::Vec3D;
 use crate::sampling::UniformSolidUnitCircle;
