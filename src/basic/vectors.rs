@@ -26,20 +26,20 @@ pub trait Dot where Self: Copy {
 impl Vec3D {
 
     pub const ZERO: Self = Self::zero();
-    pub const X: Self = Self::unit_x(1.0);
-    pub const Y: Self = Self::unit_y(1.0);
-    pub const Z: Self = Self::unit_z(1.0);
+    pub const X: Self = Self::along_x(1.0);
+    pub const Y: Self = Self::along_y(1.0);
+    pub const Z: Self = Self::along_z(1.0);
 
     pub const fn zero() -> Self {
         Self::new(0.0, 0.0, 0.0)
     }
-    pub const fn unit_x(l: f64) -> Self {
+    pub const fn along_x(l: f64) -> Self {
         Self::new(l, 0.0, 0.0)
     }
-    pub const fn unit_y(l: f64) -> Self {
+    pub const fn along_y(l: f64) -> Self {
         Self::new(0.0, l, 0.0)
     }
-    pub const fn unit_z(l: f64) -> Self {
+    pub const fn along_z(l: f64) -> Self {
         Self::new(0.0, 0.0, l)
     }
 

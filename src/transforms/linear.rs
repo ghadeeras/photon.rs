@@ -34,14 +34,14 @@ impl Transformation for Linear {
         let &Linear(_, ref anti_matrix, factor) = self;
         let origin = &ray.origin * anti_matrix * factor;
         let direction =  &ray.direction * anti_matrix * factor;
-        Ray::new(origin, direction, ray.time)
+        ray.with_origin_and_direction(origin, direction)
     }
 
     fn to_global(&self, hit: &Hit) -> Hit {
         let Linear(ref matrix, ref anti_matrix, _) = self;
         let origin = matrix * &hit.incident_ray.origin;
         let direction = matrix * &hit.incident_ray.direction;
-        let ray = Ray::new(origin, direction, hit.incident_ray.time);
+        let ray = hit.incident_ray.with_origin_and_direction(origin, direction);
         hit.local_hit().transformed_as(ray, anti_matrix * &hit.normal)
     }
 

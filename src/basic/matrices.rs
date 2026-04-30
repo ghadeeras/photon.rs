@@ -1,4 +1,4 @@
-use std::ops::{Add, Index, IndexMut, Mul, Neg, Sub};
+use std::ops::{Add, Div, Index, IndexMut, Mul, Neg, Sub};
 
 use crate::basic::vectors::{Dot, Vec3D};
 
@@ -28,17 +28,30 @@ impl Matrix {
     }
 
     pub fn with_z_alignment(z: &Vec3D) -> Self {
-        let max_dot = 0.5 * z.length_squared();
-        let x1 = Vec3D::new(z.z(), z.x(), z.y());
-        let x2 = if z.dot(&x1) < max_dot { x1 } else { Vec3D::new(z.x(), -2.0 * z.y(), z.z()) };
-        Self::with_z_and_x_alignment(z, &x2)
+        let x2 = z.x() * z.x();
+        let y2 = z.y() * z.y();
+        let z2 = z.z() * z.z();
+
+        let x1_l2 = z2 + y2;
+        let x2_l2 = y2 + x2;
+        let z_l2 = z2 + x2_l2;
+
+        let zz = z / z_l2.sqrt();
+        let xx = if x1_l2 > x2_l2 {
+            Vec3D::new(0.0, z.z(), -z.y()) / x1_l2.sqrt()
+        } else {
+            Vec3D::new(z.y(), -z.x(), 0.0) / x2_l2.sqrt()
+        };
+        let yy = zz.cross(&xx);
+
+        Self { columns: [xx, yy, zz] }
     }
 
     pub fn with_z_and_x_alignment(z: &Vec3D, x: &Vec3D) -> Self {
         let zz = z.unit();
         let xx = x.reject(&zz, true).unit();
         let yy = zz.cross(&xx);
-        Self::new(&xx, &yy, &zz)
+        Self { columns: [xx, yy, zz] }
     }
 
     pub fn rotation(axis: &Vec3D, angle: f64) -> Self {
@@ -86,6 +99,10 @@ impl Matrix {
 
     pub fn det(&self) -> f64 {
         self.x().cross(self.y()).dot(*self.z())
+    }
+
+    pub fn inverse(&self) -> Self {
+        &self.anti_matrix() / self.det()
     }
 
 }
@@ -163,6 +180,36 @@ impl Mul<&Matrix> for f64 {
 
     fn mul(self, rhs: &Matrix) -> Self::Output {
         rhs * self
+    }
+
+}
+
+impl Div<f64> for &Matrix {
+
+    type Output = Matrix;
+
+    fn div(self, rhs: f64) -> Self::Output {
+        self * (1.0 / rhs)
+    }
+
+}
+
+impl Div<&Matrix> for f64 {
+
+    type Output = Matrix;
+
+    fn div(self, rhs: &Matrix) -> Self::Output {
+        self * &rhs.inverse()
+    }
+
+}
+
+impl Div<&Matrix> for &Matrix {
+
+    type Output = Matrix;
+
+    fn div(self, rhs: &Matrix) -> Self::Output {
+        self * &rhs.inverse()
     }
 
 }

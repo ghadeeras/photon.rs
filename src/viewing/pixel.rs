@@ -36,7 +36,7 @@ impl<'a> Distribution<Ray> for CameraPixel<'a> {
         let teleported_pixel_sample = Vec3D::new(pixel_sample.x(), pixel_sample.y(), -self.camera.lens.focal_length);
         let focal_plane_sample = teleported_pixel_sample * self.camera.lens.focal_plane_ratio;
         let direction = focal_plane_sample - lens_sample;
-        Ray::new(lens_sample, direction, time)
+        Ray::new(lens_sample, direction, Color::WHITE, time)
     }
 
 }
