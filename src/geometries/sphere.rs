@@ -58,7 +58,7 @@ impl Sphere {
         } else {
             -4.0 * PI
         };
-        Hit::new(outside, area * point, Ray::new(point, ray.direction, ray.time), distance)
+        Hit::new(outside, area * point, ray.with_origin(point), distance)
     }
 
 }
