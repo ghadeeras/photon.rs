@@ -1,28 +1,46 @@
 use crate::wgpu::{boot, canvas, gpu, tracer};
-use std::rc::Rc;
+use std::sync::Arc;
+use winit::window::Window;
 
-pub struct App<'a> {
-    gpu: Rc<gpu::GPU>,
-    canvas: canvas::Canvas<'a>,
+pub struct AppFactory;
+pub struct App {
+    gpu: Arc<gpu::GPU>,
+    canvas: canvas::Canvas,
     tracer: tracer::Tracer,
 }
 
-impl<'a> App<'a> {
+impl App {
 
-    pub async fn new(window: &'a winit::window::Window) -> App<'a> {
-        let mut canvas = canvas::Canvas::simple_new(window);
-        let gpu_adapter = canvas.get_preferred_adapter().await;
+    pub async fn new(window: Window) -> App {
+        let w = Arc::new(window);
+        let mut canvas = canvas::Canvas::simple_new(w.clone());
+        let gpu_adapter = canvas.request_preferred_adapter().await;
         canvas.adjust_preferred_format(&gpu_adapter);
-        let gpu = Rc::new(gpu::GPU::new(Rc::new(gpu_adapter)).await);
+        let gpu = Arc::new(gpu::GPU::new(Arc::new(gpu_adapter)).await);
+        canvas.reconfigure(gpu.device.as_ref());
         let tracer = tracer::Tracer::new(gpu.clone(), canvas.preferred_format());
         Self { gpu, canvas, tracer }
     }
 
 }
 
-impl<'a> boot::App for App<'a> {
+impl boot::AppFactory for AppFactory {
+    type Output = App;
+
+    async fn init(&mut self, window: Window) -> Self::Output {
+        App::new(window).await
+    }
+
+}
+
+impl boot::App for App {
+
+    fn window(&self) -> Arc<Window> {
+        self.canvas.window()
+    }
+
     fn resize(&mut self, size: winit::dpi::PhysicalSize<u32>) {
-        self.canvas.resize(self.gpu.device().as_ref(), size.width, size.height);
+        self.canvas.resize(self.gpu.device.as_ref(), size.width, size.height);
     }
 
     fn redraw(&mut self) {
@@ -37,7 +55,7 @@ impl<'a> boot::App for App<'a> {
                     wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated => {
                         // Reconfigure with the current config and retry once
                         log::warn!("Surface error {:?}; reconfiguring and retrying frame", err);
-                        self.canvas.reconfigure(self.gpu.device().as_ref());
+                        self.canvas.reconfigure(self.gpu.device.as_ref());
                         if let Ok(texture) = self.canvas.acquire_frame() {
                             self.tracer.render(&texture.texture);
                             texture.present();
@@ -52,6 +70,9 @@ impl<'a> boot::App for App<'a> {
                     wgpu::SurfaceError::OutOfMemory => {
                         // Fatal; log and return (could also request app exit)
                         log::error!("Out of memory while acquiring surface frame");
+                    }
+                    _ => {
+                        log::error!("{:?}", err);
                     }
                 }
             }

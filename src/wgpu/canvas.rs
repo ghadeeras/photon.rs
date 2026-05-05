@@ -1,39 +1,45 @@
-use crate::wgpu::gpu;
-use std::rc::Rc;
+use std::sync::Arc;
+use winit::window::Window;
 
-pub struct Canvas<'a> {
-    gpu_instance: Rc<wgpu::Instance>,
-    gpu_surface: wgpu::Surface<'a>,
+pub struct Canvas {
+    gpu_instance: Arc<wgpu::Instance>,
+    gpu_surface: wgpu::Surface<'static>,
     config: wgpu::SurfaceConfiguration,
+    window: Arc<Window>,
 }
 
-impl<'a> Canvas<'a> {
+impl Canvas {
 
-    pub fn simple_new(window: &'a winit::window::Window) -> Self {
-        Self::new(window, Rc::new(gpu::GPU::new_instance()))
+    pub fn simple_new(window: Arc<Window>) -> Self {
+        Self::new(window, Arc::new(wgpu::Instance::new(&Default::default())))
     }
 
-    pub fn new(window: &'a winit::window::Window, gpu_instance: Rc<wgpu::Instance>) -> Self {
-        let gpu_surface = gpu_instance.create_surface(window).unwrap();
+    pub fn new(window: Arc<Window>, gpu_instance: Arc<wgpu::Instance>) -> Self {
+        let gpu_surface = gpu_instance.create_surface(window.clone()).unwrap();
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: wgpu::TextureFormat::Rgba8UnormSrgb,
             width: window.inner_size().width,
             height: window.inner_size().height,
-            present_mode: wgpu::PresentMode::Fifo,
+            present_mode: wgpu::PresentMode::default(),
             view_formats: vec![],
-            alpha_mode: wgpu::CompositeAlphaMode::Auto,
+            alpha_mode: wgpu::CompositeAlphaMode::default(),
             desired_maximum_frame_latency: 1
         };
         Self {
             gpu_instance,
             gpu_surface,
             config,
+            window,
         }
     }
 
-    pub async fn get_preferred_adapter(&self) -> wgpu::Adapter {
-        gpu::GPU::new_adapter(self.gpu_instance().as_ref(), Some(&self.gpu_surface)).await
+    pub async fn request_preferred_adapter(&self) -> wgpu::Adapter {
+        self.gpu_instance.request_adapter(&wgpu::RequestAdapterOptions {
+            compatible_surface: Some(&self.gpu_surface),
+            power_preference: wgpu::PowerPreference::HighPerformance,
+            force_fallback_adapter: false,
+        }).await.unwrap()
     }
 
     pub fn adjust_preferred_format(&mut self, gpu_adapter: &wgpu::Adapter) {
@@ -44,8 +50,12 @@ impl<'a> Canvas<'a> {
             .clone();
     }
 
-    pub fn gpu_instance(&self) -> Rc<wgpu::Instance> {
+    pub fn gpu_instance(&self) -> Arc<wgpu::Instance> {
         self.gpu_instance.clone()
+    }
+
+    pub fn window(&self) -> Arc<Window> {
+        self.window.clone()
     }
 
     pub fn preferred_format(&self) -> wgpu::TextureFormat {
