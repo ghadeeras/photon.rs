@@ -107,7 +107,7 @@ fn f_main(varyings: Varyings) -> Fragment {
         hit_triangle = select(hit_triangle, i, closer_hit);
         hit = select(hit, new_hit, closer_hit);
     }
-    if (hit_triangle >= 0 && hit_triangle < 3) {
+    if (hit_triangle >= 0 && hit_triangle < 2) {
         let t = triangles[hit_triangle];
         let vertex = interpolate(hit, t);
         let shade = abs(dot(vertex.normal, environment.sun_direction)) * one_to_pi;

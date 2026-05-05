@@ -1,17 +1,17 @@
 use crate::wgpu::gpu;
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub struct Tracer {
-    gpu: Rc<gpu::GPU>,
+    gpu: Arc<gpu::GPU>,
     gpu_pipeline: wgpu::RenderPipeline,
     format: wgpu::TextureFormat,
 }
 
 impl Tracer {
 
-    pub fn new(gpu: Rc<gpu::GPU>, format: wgpu::TextureFormat) -> Self {
-        let tracing_shader = gpu.device().create_shader_module(wgpu::include_wgsl!("./tracer.wgsl"));
-        let gpu_pipeline = gpu.device().create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+    pub fn new(gpu: Arc<gpu::GPU>, format: wgpu::TextureFormat) -> Self {
+        let tracing_shader = gpu.device.create_shader_module(wgpu::include_wgsl!("./tracer.wgsl"));
+        let gpu_pipeline = gpu.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: None,
             layout: None,
             vertex: wgpu::VertexState {
@@ -38,7 +38,7 @@ impl Tracer {
                 ..Default::default()
             },
             multisample: Default::default(),
-            multiview: None,
+            multiview_mask: None,
             depth_stencil: None,
             cache: None
         });
@@ -50,7 +50,7 @@ impl Tracer {
     }
 
     pub fn render(&self, texture: &wgpu::Texture) {
-        let mut encoder = self.gpu.device().create_command_encoder(&Default::default());
+        let mut encoder = self.gpu.device.create_command_encoder(&Default::default());
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             color_attachments: &[
                 Some(wgpu::RenderPassColorAttachment {
@@ -62,7 +62,8 @@ impl Tracer {
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Load,
                         store: wgpu::StoreOp::Store,
-                    }
+                    },
+                    depth_slice: None,
                 })
             ],
             ..Default::default()
@@ -70,7 +71,7 @@ impl Tracer {
         pass.set_pipeline(&self.gpu_pipeline);
         pass.draw(0..3, 0..1);
         drop(pass);
-        self.gpu.queue().submit(Some(encoder.finish()));
+        self.gpu.queue.submit(Some(encoder.finish()));
     }
 
 }

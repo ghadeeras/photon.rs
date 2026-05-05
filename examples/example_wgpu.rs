@@ -1,12 +1,8 @@
-use photon::wgpu::{app, boot};
+use photon::wgpu::boot;
+use photon::wgpu::app::AppFactory;
 
 fn main() {
     env_logger::init();
-    pollster::block_on(request_app());
-}
-
-async fn request_app() {
-    let (bootstrapper, window) = boot::Bootstrapper::new();
-    let app = app::App::new(&window).await;
-    bootstrapper.run(app, &window);
+    let bootstrapper = boot::Bootstrapper::new(AppFactory);
+    bootstrapper.run();
 }

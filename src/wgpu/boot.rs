@@ -1,64 +1,78 @@
-pub struct Bootstrapper {
-    event_loop: winit::event_loop::EventLoop<()>,
+use std::sync::Arc;
+use winit::application::ApplicationHandler;
+use winit::dpi::PhysicalSize;
+use winit::event::WindowEvent;
+use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
+use winit::window::{Window, WindowAttributes, WindowId};
+
+pub struct Bootstrapper<T: AppFactory> {
+    app_factory: T,
+    app: Option<T::Output>,
 }
 
-struct BootstrappedApp<'a, A: App> {
-    app: A,
-    window: &'a winit::window::Window,
-}
+impl<T: AppFactory> Bootstrapper<T> {
 
-impl Bootstrapper {
-
-    pub fn new() -> (Self, winit::window::Window) {
-        let event_loop = winit::event_loop::EventLoop::new().unwrap();
-        let window = winit::window::WindowBuilder::new()
-            .with_title("Photon.rs")
-            .with_window_icon(Some(winit::window::Icon::from_rgba(vec![63, 127, 255, 255], 1, 1).unwrap()))
-            .with_fullscreen(Some(winit::window::Fullscreen::Borderless(None)))
-            .with_visible(false)
-            .build(&event_loop)
-            .unwrap();
-        (Self { event_loop }, window)
+    pub fn new(app_factory: T) -> Self {
+        Self { app_factory, app: None }
     }
 
-    pub fn run<A: App>(self, app: A, window: &winit::window::Window) {
-        window.set_visible(true);
-        let mut bootstrapped_app = BootstrappedApp { app, window };
-        self.event_loop.run(move |event, target| {
-            match event {
-                winit::event::Event::Resumed => bootstrapped_app.window.request_redraw(),
-                winit::event::Event::WindowEvent {
-                    event: window_event,
-                    ..
-                } => bootstrapped_app.handle_window_event(window_event, target),
-                _ => {}
-            }
-        }).unwrap();
+    pub fn run(mut self) {
+        let event_loop = EventLoop::new().unwrap();
+        event_loop.set_control_flow(ControlFlow::Wait);
+        event_loop.run_app(&mut self).unwrap();
     }
 
 }
 
-impl<'a, A: App> BootstrappedApp<'a, A> {
+impl<T: AppFactory> ApplicationHandler for Bootstrapper<T> {
 
-    fn handle_window_event(&mut self, window_event: winit::event::WindowEvent, target: &winit::event_loop::EventLoopWindowTarget<()>) {
-        match window_event {
-            winit::event::WindowEvent::CloseRequested => target.exit(),
-            winit::event::WindowEvent::Resized(size) => self.app.resize(size),
-            winit::event::WindowEvent::KeyboardInput { .. } => {}
-            winit::event::WindowEvent::MouseInput { .. } => {}
-            winit::event::WindowEvent::RedrawRequested => {
-                self.window.request_redraw();
-                self.app.redraw()
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        let attributes = self.app_factory.window_attributes(Window::default_attributes());
+        let window = event_loop.create_window(attributes).unwrap();
+        let app = pollster::block_on(self.app_factory.init(window));
+        self.app = Some(app);
+    }
+
+    fn window_event(&mut self, event_loop: &ActiveEventLoop, _window_id: WindowId, event: WindowEvent) {
+        let app = self.app.as_mut().unwrap();
+        match event {
+            WindowEvent::CloseRequested => {
+                app.cleanup_resources();
+                event_loop.exit()
             },
+            WindowEvent::Resized(size) => {
+                app.resize(size)
+            },
+            WindowEvent::RedrawRequested => {
+                app.window().request_redraw();
+                app.redraw();
+            }
             _ => {}
         }
     }
 
 }
 
-pub trait App {
+pub trait AppFactory: Sized {
 
-    fn resize(&mut self, size: winit::dpi::PhysicalSize<u32>);
+    type Output: App;
+
+    fn window_attributes(&self, default_attributes: WindowAttributes) -> WindowAttributes {
+        default_attributes
+    }
+
+    fn init(&mut self, window: Window) -> impl std::future::Future<Output = Self::Output>;
+
+}
+
+pub trait App: Sized {
+
+    fn window(&self) -> Arc<Window>;
+
+    fn cleanup_resources(&mut self) {
+    }
+
+    fn resize(&mut self, size: PhysicalSize<u32>);
 
     fn redraw(&mut self);
 
