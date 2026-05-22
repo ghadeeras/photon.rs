@@ -1,15 +1,27 @@
-use crate::wgpu::gpu;
-use std::sync::Arc;
+use crate::wgpu::app::{Renderer, RendererFactory};
+use crate::wgpu::gpu::GPU;
+use wgpu::{Texture, TextureFormat};
 
+pub struct TracerFactory;
 pub struct Tracer {
-    gpu: Arc<gpu::GPU>,
+    gpu: GPU,
     gpu_pipeline: wgpu::RenderPipeline,
-    format: wgpu::TextureFormat,
+    format: TextureFormat,
+}
+
+impl RendererFactory for TracerFactory {
+
+    type Output = Tracer;
+
+    fn new_renderer(&self, gpu: GPU, format: TextureFormat) -> Self::Output {
+        Tracer::new(gpu, format)
+    }
+
 }
 
 impl Tracer {
 
-    pub fn new(gpu: Arc<gpu::GPU>, format: wgpu::TextureFormat) -> Self {
+    pub fn new(gpu: GPU, format: TextureFormat) -> Self {
         let tracing_shader = gpu.device.create_shader_module(wgpu::include_wgsl!("./tracer.wgsl"));
         let gpu_pipeline = gpu.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: None,
@@ -49,7 +61,19 @@ impl Tracer {
         }
     }
 
-    pub fn render(&self, texture: &wgpu::Texture) {
+    pub fn gpu(&self) -> &GPU {
+        &self.gpu
+    }
+
+}
+
+impl Renderer for Tracer {
+
+    fn gpu(&self) -> &GPU {
+        &self.gpu
+    }
+
+    fn render(&self, texture: &Texture) {
         let mut encoder = self.gpu.device.create_command_encoder(&Default::default());
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             color_attachments: &[

@@ -13,6 +13,7 @@ pub mod noise;
 pub mod basic;
 pub mod filters;
 pub mod wgpu;
+pub mod win;
 
 pub const EPSILON: f64 = 2.0 * (f32::EPSILON as f64);
 
