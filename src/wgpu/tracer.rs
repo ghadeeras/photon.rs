@@ -1,5 +1,6 @@
 use crate::wgpu::app::{Renderer, RendererFactory};
 use crate::wgpu::gpu::GPU;
+use std::time::Duration;
 use wgpu::{Texture, TextureFormat};
 
 pub struct TracerFactory;
@@ -7,6 +8,7 @@ pub struct Tracer {
     gpu: GPU,
     gpu_pipeline: wgpu::RenderPipeline,
     format: TextureFormat,
+    elapsed_time: Duration
 }
 
 impl RendererFactory for TracerFactory {
@@ -28,25 +30,24 @@ impl Tracer {
             layout: None,
             vertex: wgpu::VertexState {
                 module: &tracing_shader,
-                entry_point: Some("v_main"),
+                entry_point: None,
                 buffers: &[],
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &tracing_shader,
-                entry_point: Some("f_main"),
+                entry_point: None,
                 targets: &[
                     Some(wgpu::ColorTargetState {
                         format,
                         blend: None,
-                        write_mask: wgpu::ColorWrites::COLOR,
+                        write_mask: wgpu::ColorWrites::all(),
                     })
                 ],
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
             }),
             primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleStrip,
-                strip_index_format: Some(wgpu::IndexFormat::Uint16),
+                topology: wgpu::PrimitiveTopology::TriangleList,
                 ..Default::default()
             },
             multisample: Default::default(),
@@ -58,6 +59,7 @@ impl Tracer {
             gpu,
             gpu_pipeline,
             format,
+            elapsed_time: Duration::default(),
         }
     }
 
@@ -71,6 +73,10 @@ impl Renderer for Tracer {
 
     fn gpu(&self) -> &GPU {
         &self.gpu
+    }
+
+    fn animate(&mut self, elapses_time: Duration) {
+        self.elapsed_time = elapses_time;
     }
 
     fn render(&self, texture: &Texture) {
@@ -92,8 +98,9 @@ impl Renderer for Tracer {
             ],
             ..Default::default()
         });
+        let t = (self.elapsed_time.as_millis() & 0x7FFFFFFF) as u32;
         pass.set_pipeline(&self.gpu_pipeline);
-        pass.draw(0..3, 0..1);
+        pass.draw(0..3, t..(t + 1));
         drop(pass);
         self.gpu.queue.submit(Some(encoder.finish()));
     }

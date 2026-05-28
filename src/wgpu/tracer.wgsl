@@ -28,6 +28,7 @@ struct Environment {
 struct Varyings {
     @builtin(position) position: vec4<f32>,
     @location(0) sensor_position: vec4<f32>,
+    @location(1) time_sec: f32,
 }
 
 struct Fragment {
@@ -88,15 +89,16 @@ const model_vertexes = array<Vertex, 4>(
 );
 
 @vertex
-fn v_main(@builtin(vertex_index) i: u32) -> Varyings {
+fn v_main(@builtin(vertex_index) i: u32, @builtin(instance_index) t_ms: u32) -> Varyings {
+    let t = f32(t_ms) / 1000.0;
     let v = full_screen_triangle[i];
-    return Varyings(v, v);
+    return Varyings(v, v, t);
 }
 
 @fragment
 fn f_main(varyings: Varyings) -> Fragment {
     let aspect_ratio = -dpdyFine(varyings.sensor_position.y) / dpdxFine(varyings.sensor_position.x);
-    let ray = primary_ray(varyings.sensor_position.xy, aspect_ratio);
+    let ray = primary_ray(varyings.sensor_position.xy, aspect_ratio, varyings.time_sec);
 
     var hit_triangle = -1;
     var hit = vec4(0.0, 0.0, 1.0, 0.0);
@@ -122,10 +124,18 @@ fn compare(ratio1: vec2<f32>, ratio2: vec2<f32>) -> f32 {
     return ratio1.x * ratio2.y - ratio1.y * ratio2.x;
 }
 
-fn primary_ray(position: vec2<f32>, aspect_ratio: f32) -> Ray {
+fn primary_ray(position: vec2<f32>, aspect_ratio: f32, time_sec: f32) -> Ray {
+    let c = cos(time_sec);
+    let s = sin(time_sec);
+    let m = mat4x4(
+          s, 0.0,    c, 0.0,
+        0.0, 1.0,  0.0, 0.0,
+          c, 0.0,   -s, 0.0,
+        0.0, 0.0, -5.0, 1.0
+    );
     return Ray(
-        vec4(vec3(0.0), 1.0),
-        normalize(vec4(
+        m * vec4(vec3(0.0, 0.0, 5.0), 1.0),
+        m * normalize(vec4(
              position.x * aspect_ratio,
              position.y,
             -camera.focal_ratio,

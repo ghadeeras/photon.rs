@@ -1,11 +1,10 @@
 use crate::wgpu::{canvas, gpu};
 use crate::win::app;
 use std::sync::Arc;
+use std::time::Duration;
 use winit::window::Window;
 
-pub struct AppFactory<F: RendererFactory> {
-    pub renderer_factory: F
-}
+pub struct AppFactory<F: RendererFactory>(pub F);
 pub struct App<'window, F: RendererFactory> {
     canvas: canvas::Canvas<'window>,
     renderer: F::Output,
@@ -23,6 +22,8 @@ pub trait Renderer : Sized {
 
     fn gpu(&self) -> &gpu::GPU;
 
+    fn animate(&mut self, elapses_time: Duration);
+
     fn render(&self, texture: &wgpu::Texture);
 
 }
@@ -36,7 +37,8 @@ impl<F: RendererFactory> app::AppFactory for AppFactory<F> {
         let mut canvas = canvas::Canvas::new(window, &gpu_instance)?;
         let gpu = gpu::GPU::new(gpu_instance, Some(canvas.surface())).await?;
         canvas.reconfigure(&gpu);
-        let renderer = self.renderer_factory.new_renderer(gpu, canvas.preferred_format());
+        let Self(ref renderer_factory) = self;
+        let renderer = renderer_factory.new_renderer(gpu, canvas.preferred_format());
         Ok(Self::Output { canvas, renderer })
     }
 
@@ -50,6 +52,10 @@ impl<'window, F: RendererFactory> app::App for App<'window, F> {
 
     fn resize(&mut self, size: winit::dpi::PhysicalSize<u32>) {
         self.canvas.resize(&self.renderer.gpu().device, size.width, size.height);
+    }
+
+    fn animate(&mut self, elapsed: Duration) {
+        self.renderer.animate(elapsed);
     }
 
     fn redraw(&mut self) {

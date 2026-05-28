@@ -101,8 +101,21 @@ impl Matrix {
         self.x().cross(self.y()).dot(*self.z())
     }
 
+    pub fn transpose(&self) -> Self {
+        let x = self.x();
+        let y = self.y();
+        let z = self.z();
+        Matrix::new(
+            &Vec3D::new(x.x(), y.x(), z.x()),
+            &Vec3D::new(x.y(), y.y(), z.y()),
+            &Vec3D::new(x.z(), y.z(), z.z()),
+        )
+    }
+
     pub fn inverse(&self) -> Self {
-        &self.anti_matrix() / self.det()
+        let anti_matrix = self.anti_matrix();
+        let det = self.x().dot(anti_matrix.x());
+        &anti_matrix.transpose() / det
     }
 
 }

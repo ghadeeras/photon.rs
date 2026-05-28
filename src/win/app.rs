@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 use winit::dpi::PhysicalSize;
 use winit::window::{Window, WindowAttributes};
 
@@ -22,6 +23,8 @@ pub trait App: Sized {
     }
 
     fn resize(&mut self, size: PhysicalSize<u32>);
+
+    fn animate(&mut self, elapsed: Duration);
 
     fn redraw(&mut self);
 

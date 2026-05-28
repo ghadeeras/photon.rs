@@ -1,5 +1,6 @@
-use anyhow::Context;
 use crate::win::app::{App, AppFactory};
+use anyhow::Context;
+use std::time::{Duration, SystemTime};
 use winit::application::ApplicationHandler;
 use winit::event::WindowEvent;
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
@@ -8,12 +9,13 @@ use winit::window::{Window, WindowId};
 pub struct Bootstrapper<'window, F: AppFactory> {
     app_factory: F,
     app: Option<F::Output<'window>>,
+    initial_time: SystemTime,
 }
 
 impl<'window, T: AppFactory> Bootstrapper<'window, T> {
 
     pub fn new(app_factory: T) -> Self {
-        Self { app_factory, app: None }
+        Self { app_factory, app: None, initial_time: SystemTime::now() }
     }
 
     pub fn run(mut self) -> anyhow::Result<()> {
@@ -23,7 +25,7 @@ impl<'window, T: AppFactory> Bootstrapper<'window, T> {
         Ok(())
     }
 
-    fn handle_event(event_loop: &ActiveEventLoop, event: WindowEvent, app: &mut T::Output<'window>) {
+    fn handle_event(event_loop: &ActiveEventLoop, event: WindowEvent, app: &mut T::Output<'window>, elapsed_time: Duration) {
         match event {
             WindowEvent::CloseRequested => {
                 app.cleanup_resources();
@@ -34,6 +36,7 @@ impl<'window, T: AppFactory> Bootstrapper<'window, T> {
             },
             WindowEvent::RedrawRequested => {
                 app.window().request_redraw();
+                app.animate(elapsed_time);
                 app.redraw();
             }
             _ => {}
@@ -65,7 +68,7 @@ impl<'window, T: AppFactory> ApplicationHandler for Bootstrapper<'window, T> {
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _window_id: WindowId, event: WindowEvent) {
         if let Some(ref mut app) = self.app {
-            Self::handle_event(event_loop, event, app);
+            Self::handle_event(event_loop, event, app, self.initial_time.elapsed().unwrap_or_else(|_| Duration::default()));
         } else {
             log::warn!("No application created yet to handle window events!");
         }
