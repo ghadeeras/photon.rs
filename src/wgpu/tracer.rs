@@ -1,14 +1,16 @@
 use crate::wgpu::app::{Renderer, RendererFactory};
 use crate::wgpu::gpu::GPU;
+use crate::wgpu::primitive_assembly::{PrimitiveAssembly, Triangles};
 use std::time::Duration;
-use wgpu::{Texture, TextureFormat};
+use wgpu::{RenderPipeline, Texture, TextureFormat};
 
 pub struct TracerFactory;
 pub struct Tracer {
     gpu: GPU,
     gpu_pipeline: wgpu::RenderPipeline,
     format: TextureFormat,
-    elapsed_time: Duration
+    triangles: Triangles,
+    elapsed_time: Duration,
 }
 
 impl RendererFactory for TracerFactory {
@@ -55,11 +57,41 @@ impl Tracer {
             depth_stencil: None,
             cache: None
         });
+        let triangles = Self::triangles(&gpu, &gpu_pipeline);
         Self {
             gpu,
             gpu_pipeline,
             format,
+            triangles,
             elapsed_time: Duration::default(),
+        }
+    }
+
+    fn triangles(gpu: &GPU, gpu_pipeline: &RenderPipeline) -> Triangles {
+        let triangles = PrimitiveAssembly::new_triangles(&gpu);
+        let triangles_group = gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: None,
+            layout: &gpu_pipeline.get_bind_group_layout(0),
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                    buffer: &triangles.triangles_buffer,
+                    size: None,
+                    offset: 0
+                })
+            }, wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                    buffer: &triangles.vertices_buffer,
+                    size: None,
+                    offset: 0
+                })
+            }]
+        });
+        Triangles {
+            triangles_group,
+            triangles_buffer: triangles.triangles_buffer,
+            vertices_buffer: triangles.vertices_buffer,
         }
     }
 
@@ -100,6 +132,7 @@ impl Renderer for Tracer {
         });
         let t = (self.elapsed_time.as_millis() & 0x7FFFFFFF) as u32;
         pass.set_pipeline(&self.gpu_pipeline);
+        pass.set_bind_group(0, &self.triangles.triangles_group, &[]);
         pass.draw(0..3, t..(t + 1));
         drop(pass);
         self.gpu.queue.submit(Some(encoder.finish()));

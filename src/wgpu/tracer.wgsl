@@ -5,7 +5,7 @@ struct Vertex {
 
 struct Triangle {
     as_matrix: mat4x4<f32>,
-    corners: array<u32, 3>,
+    corners: vec3u,
 }
 
 struct Camera {
@@ -36,6 +36,10 @@ struct Fragment {
 }
 
 const max_distance = 65536.0;
+const diffuse = 0.75;
+const specular = 0.25;
+const specularity = 128.0;
+const ambient_light = 0.015625;
 
 const camera = Camera(
     mat4x4<f32>(
@@ -49,7 +53,7 @@ const camera = Camera(
 );
 
 const environment = Environment(
-    vec3<f32>(0.8, -0.6, 10.0) / sqrt(101.0),
+    vec3<f32>(-5, 5, 10.0) / sqrt(150.0),
     vec3<f32>(1.0, 1.0, 1.0),
     vec3<f32>(0.02, 0.16, 0.64),
 );
@@ -62,31 +66,16 @@ const full_screen_triangle = array<vec4<f32>, 3>(
 
 const pi = 4.0 * atan(1.0);
 const one_to_pi = 1.0 / pi;
+const one_to_two_pi = 0.5 * one_to_pi;
 const a = pi / 3.0;
 const c = cos(a);
 const s = sin(a);
 
-const triangles = array<Triangle, 2>(
-    Triangle(mat4x4(
-          c,   s, 0.0, 0.0,
-         -s,   c, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 5.0, 1.0
-    ), array(0, 0, 1)),
-    Triangle(mat4x4(
-        1.0,      0.0,     0.0, 0.0,
-        0.0,        c,       s, 0.0,
-        0.0,       -s,       c, 0.0,
-       -1.0, -5.0 * s, 5.0 * c, 1.0
-    ), array(2, 2, 3)),
-);
+@group(0) @binding(0)
+var<storage, read> triangles: array<mat4x4<f32>>;
 
-const model_vertexes = array<Vertex, 4>(
-    Vertex(vec3(  c,   s, 4.0), vec3(0.3, 0.5, 0.7)),
-    Vertex(vec3( -c,  -s, 4.0), vec3(0.3, 0.5, 0.7)),
-    Vertex(vec3(0.0,  -s,   c), vec3(0.3, 0.5, 0.7)),
-    Vertex(vec3(0.0,  -s,   c), vec3(0.3, 0.5, 0.7)),
-);
+@group(0) @binding(1)
+var<storage, read> vertices: array<Vertex>;
 
 @vertex
 fn v_main(@builtin(vertex_index) i: u32, @builtin(instance_index) t_ms: u32) -> Varyings {
@@ -102,22 +91,44 @@ fn f_main(varyings: Varyings) -> Fragment {
 
     var hit_triangle = -1;
     var hit = vec4(0.0, 0.0, 1.0, 0.0);
-    for (var i = 0; i < 2; i++) {
-        let t = triangles[i];
+    let triangles_count = i32(arrayLength(&triangles));
+    for (var i = 0; i < triangles_count; i++) {
+        let t = decode_triangle(i);
         let new_hit = intersect(ray, t);
         let closer_hit = new_hit.z > 0.0 && compare(new_hit.zw, hit.zw) < 0.0;
         hit_triangle = select(hit_triangle, i, closer_hit);
         hit = select(hit, new_hit, closer_hit);
     }
-    if (hit_triangle >= 0 && hit_triangle < 2) {
-        let t = triangles[hit_triangle];
+    if (hit_triangle >= 0 && hit_triangle < triangles_count)  {
+        let t = decode_triangle(hit_triangle);
         let vertex = interpolate(hit, t);
-        let shade = abs(dot(vertex.normal, environment.sun_direction)) * one_to_pi;
-        let specular = pow(dot(reflect(ray.direction.xyz, vertex.normal), environment.sun_direction), 128.0);
-        return Fragment(vec4((shade + specular + 0.1) * vertex.color, 1.0));
+        let geometric_factor = max(dot(vertex.normal, environment.sun_direction), 0.0);
+        let reflection_light_alignment = max(dot(reflect(ray.direction.xyz, vertex.normal), environment.sun_direction), 0.0);
+        let diffuse_shade = one_to_pi * diffuse * geometric_factor;
+        let specular_shade = select(
+            0.0,
+            specular * (specularity + 1.0) * one_to_two_pi * pow(reflection_light_alignment, specularity),
+            geometric_factor > 0.0
+        );
+        let ambient_shade = diffuse * ambient_light;
+        return Fragment(vec4((diffuse_shade + specular_shade + ambient_shade) * vertex.color, 1.0));
     } else {
-        return Fragment(vec4(environment.sky_color, 1.0));
+        let sun_light = pow(max(dot(ray.direction.xyz, environment.sun_direction), 0.0), 90.0);
+        return Fragment(vec4(environment.sky_color + sun_light, 1.0));
     }
+}
+
+fn decode_triangle(i: i32) -> Triangle {
+    var compact_t = triangles[i];
+    let corners = bitcast<u32>(vec3(
+        compact_t[0][3],
+        compact_t[1][3],
+        compact_t[2][3]
+    ));
+    compact_t[0][3] = 0.0;
+    compact_t[1][3] = 0.0;
+    compact_t[2][3] = 0.0;
+    return Triangle(compact_t, corners);
 }
 
 fn compare(ratio1: vec2<f32>, ratio2: vec2<f32>) -> f32 {
@@ -128,13 +139,13 @@ fn primary_ray(position: vec2<f32>, aspect_ratio: f32, time_sec: f32) -> Ray {
     let c = cos(time_sec);
     let s = sin(time_sec);
     let m = mat4x4(
-          s, 0.0,    c, 0.0,
-        0.0, 1.0,  0.0, 0.0,
-          c, 0.0,   -s, 0.0,
-        0.0, 0.0, -5.0, 1.0
+          c, 0.0,   s, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+         -s, 0.0,   c, 0.0,
+        0.0, 0.0, 0.0, 1.0
     );
     return Ray(
-        m * vec4(vec3(0.0, 0.0, 5.0), 1.0),
+        m * vec4(0.0, 0.0, 5.0, 1.0),
         m * normalize(vec4(
              position.x * aspect_ratio,
              position.y,
@@ -157,10 +168,10 @@ fn interpolate(hit: vec4<f32>, t: Triangle) -> Vertex {
     let w = 1.0 / hit.w;
     let w0 = w * hit.x;
     let w1 = w * hit.y;
-    let w2 = w * (hit.w - hit.x - hit.y);
-    let v0 = model_vertexes[t.corners[0]];
-    let v1 = model_vertexes[t.corners[1]];
-    let v2 = model_vertexes[t.corners[2]];
+    let w2 = 1.0 - w0 - w1;
+    let v0 = vertices[t.corners[0]];
+    let v1 = vertices[t.corners[1]];
+    let v2 = vertices[t.corners[2]];
     let n = normalize(w0 * v0.normal + w1 * v1.normal + w2 * v2.normal);
     let c = w0 * v0.color  + w1 * v1.color  + w2 * v2.color;
     return Vertex(n, c);
