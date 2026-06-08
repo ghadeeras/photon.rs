@@ -3,11 +3,12 @@ use crate::wgpu::gpu::GPU;
 use crate::wgpu::primitive_assembly::{PrimitiveAssembly, Triangles};
 use std::time::Duration;
 use wgpu::{RenderPipeline, Texture, TextureFormat};
+use crate::wgpu::geometry::Sphere;
 
 pub struct TracerFactory;
 pub struct Tracer {
     gpu: GPU,
-    gpu_pipeline: wgpu::RenderPipeline,
+    gpu_pipeline: RenderPipeline,
     format: TextureFormat,
     triangles: Triangles,
     elapsed_time: Duration,
@@ -68,21 +69,24 @@ impl Tracer {
     }
 
     fn triangles(gpu: &GPU, gpu_pipeline: &RenderPipeline) -> Triangles {
-        let triangles = PrimitiveAssembly::new_triangles(&gpu);
+        let sphere = Sphere::new(gpu);
+        let assembly = PrimitiveAssembly::new(gpu);
+        let mesh = sphere.mesh(gpu, 12);
+        let triangles_buffer = assembly.triangles(&gpu, &mesh);
         let triangles_group = gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: None,
             layout: &gpu_pipeline.get_bind_group_layout(0),
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
                 resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                    buffer: &triangles.triangles_buffer,
+                    buffer: &triangles_buffer,
                     size: None,
                     offset: 0
                 })
             }, wgpu::BindGroupEntry {
                 binding: 1,
                 resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                    buffer: &triangles.vertices_buffer,
+                    buffer: &mesh.vertices_buffer,
                     size: None,
                     offset: 0
                 })
@@ -90,8 +94,8 @@ impl Tracer {
         });
         Triangles {
             triangles_group,
-            triangles_buffer: triangles.triangles_buffer,
-            vertices_buffer: triangles.vertices_buffer,
+            triangles_buffer,
+            vertices_buffer: mesh.vertices_buffer,
         }
     }
 
