@@ -1,14 +1,9 @@
+use crate::wgpu::geometry::{Geometry, MeshGenerator, Mesh};
 use crate::wgpu::gpu::GPU;
-use wgpu;
 use wgpu::wgt::BufferDescriptor;
 
 pub struct Sphere(wgpu::ComputePipeline);
-
-pub struct Mesh {
-    pub indices_buffer: wgpu::Buffer,
-    pub positions_buffer: wgpu::Buffer,
-    pub vertices_buffer: wgpu::Buffer,
-}
+pub struct Stacks(pub u16);
 
 struct MeshInfo {
     indices_count: u32,
@@ -17,10 +12,30 @@ struct MeshInfo {
     workgroups_y: u32,
 }
 
+impl Geometry for crate::geometries::Sphere {
+    type Generator = Sphere;
+
+    fn generator(&self, gpu: &GPU) -> Self::Generator {
+        Sphere::new(gpu)
+    }
+
+}
+
+impl MeshGenerator for Sphere {
+
+    type Params = Stacks;
+
+    fn mesh(&self, gpu: &GPU, input: &Self::Params) -> Mesh {
+        let &Stacks(stacks) = input;
+        self.mesh(gpu, stacks)
+    }
+
+}
+
 impl Sphere {
 
-    pub fn new(gpu: &GPU) -> Self {
-        let shader = gpu.device.create_shader_module(wgpu::include_wgsl!("./geometry.wgsl"));
+    fn new(gpu: &GPU) -> Self {
+        let shader = gpu.device.create_shader_module(wgpu::include_wgsl!("../shaders/geometry.wgsl"));
         let gpu_pipeline = gpu.device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
             label: Some("Sphere Mesh Compute Pipeline"),
             layout: None,
@@ -32,12 +47,7 @@ impl Sphere {
         Sphere(gpu_pipeline)
     }
 
-    pub fn new_mesh(gpu: &GPU, stacks: u16) -> Mesh {
-        let geometry = Self::new(&gpu);
-        geometry.mesh(&gpu, stacks)
-    }
-
-    pub fn mesh(&self, gpu: &GPU, stacks: u16) -> Mesh {
+    fn mesh(&self, gpu: &GPU, stacks: u16) -> Mesh {
         let &Sphere(ref gpu_pipeline) = self;
         let mesh_info = self.mesh_info(stacks);
         let indices_buffer = Self::buffer(gpu, "Indices Buffer", (mesh_info.indices_count as u64) * 4);

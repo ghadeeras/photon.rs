@@ -1,22 +1,16 @@
+use crate::wgpu::geometry::Mesh;
 use crate::wgpu::gpu::GPU;
 use wgpu;
 use wgpu::wgt::BufferDescriptor;
-use crate::wgpu::geometry::Mesh;
 
 pub struct PrimitiveAssembly {
     gpu_pipeline: wgpu::ComputePipeline,
 }
 
-pub struct Triangles {
-    pub triangles_group: wgpu::BindGroup,
-    pub triangles_buffer: wgpu::Buffer,
-    pub vertices_buffer: wgpu::Buffer,
-}
-
 impl PrimitiveAssembly {
 
     pub fn new(gpu: &GPU) -> Self {
-        let shader = gpu.device.create_shader_module(wgpu::include_wgsl!("./primitive_assembly.wgsl"));
+        let shader = gpu.device.create_shader_module(wgpu::include_wgsl!("./shaders/primitive_assembly.wgsl"));
         let gpu_pipeline = gpu.device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
             label: Some("Primitive Assembly Pipeline"),
             layout: None,

@@ -1,33 +1,49 @@
 use crate::wgpu::app::{Renderer, RendererFactory};
+use crate::wgpu::geometry::{Geometry, MeshGenerator};
 use crate::wgpu::gpu::GPU;
-use crate::wgpu::primitive_assembly::{PrimitiveAssembly, Triangles};
+use crate::wgpu::primitive_assembly::PrimitiveAssembly;
 use std::time::Duration;
-use wgpu::{RenderPipeline, Texture, TextureFormat};
-use crate::wgpu::geometry::Sphere;
 
-pub struct TracerFactory;
+pub struct TracerFactory<M: MeshGenerator, G: Geometry<Generator=M>>{
+    pub geometry: G,
+    pub params: M::Params
+}
+
 pub struct Tracer {
     gpu: GPU,
-    gpu_pipeline: RenderPipeline,
-    format: TextureFormat,
-    triangles: Triangles,
+    gpu_pipeline: wgpu::RenderPipeline,
+    format: wgpu::TextureFormat,
+    triangles_group: wgpu::BindGroup,
     elapsed_time: Duration,
 }
 
-impl RendererFactory for TracerFactory {
+pub struct Triangles {
+    pub triangles_buffer: wgpu::Buffer,
+    pub vertices_buffer: wgpu::Buffer,
+}
+
+impl<M: MeshGenerator, G: Geometry<Generator=M>> RendererFactory for TracerFactory<M, G> {
 
     type Output = Tracer;
 
-    fn new_renderer(&self, gpu: GPU, format: TextureFormat) -> Self::Output {
-        Tracer::new(gpu, format)
+    fn new_renderer(&self, gpu: GPU, format: wgpu::TextureFormat) -> Self::Output {
+        let &Self { ref geometry, params: ref input } = self;
+        let sphere_gen = geometry.generator(&gpu);
+        let assembly = PrimitiveAssembly::new(&gpu);
+        let mesh = sphere_gen.mesh(&gpu, input);
+        let triangles_buffer = assembly.triangles(&gpu, &mesh);
+        Tracer::new(gpu, format, Triangles {
+            triangles_buffer,
+            vertices_buffer: mesh.vertices_buffer,
+        })
     }
 
 }
 
 impl Tracer {
 
-    pub fn new(gpu: GPU, format: TextureFormat) -> Self {
-        let tracing_shader = gpu.device.create_shader_module(wgpu::include_wgsl!("./tracer.wgsl"));
+    pub fn new(gpu: GPU, format: wgpu::TextureFormat, triangles: Triangles) -> Self {
+        let tracing_shader = gpu.device.create_shader_module(wgpu::include_wgsl!("./shaders/tracer.wgsl"));
         let gpu_pipeline = gpu.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: None,
             layout: None,
@@ -58,45 +74,37 @@ impl Tracer {
             depth_stencil: None,
             cache: None
         });
-        let triangles = Self::triangles(&gpu, &gpu_pipeline);
+        let triangles_group = Self::triangles_group(&gpu, &gpu_pipeline, triangles);
         Self {
             gpu,
             gpu_pipeline,
             format,
-            triangles,
+            triangles_group,
             elapsed_time: Duration::default(),
         }
     }
 
-    fn triangles(gpu: &GPU, gpu_pipeline: &RenderPipeline) -> Triangles {
-        let sphere = Sphere::new(gpu);
-        let assembly = PrimitiveAssembly::new(gpu);
-        let mesh = sphere.mesh(gpu, 12);
-        let triangles_buffer = assembly.triangles(&gpu, &mesh);
+    fn triangles_group(gpu: &GPU, gpu_pipeline: &wgpu::RenderPipeline, triangles: Triangles) -> wgpu::BindGroup {
         let triangles_group = gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: None,
             layout: &gpu_pipeline.get_bind_group_layout(0),
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
                 resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                    buffer: &triangles_buffer,
+                    buffer: &triangles.triangles_buffer,
                     size: None,
                     offset: 0
                 })
             }, wgpu::BindGroupEntry {
                 binding: 1,
                 resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                    buffer: &mesh.vertices_buffer,
+                    buffer: &triangles.vertices_buffer,
                     size: None,
                     offset: 0
                 })
             }]
         });
-        Triangles {
-            triangles_group,
-            triangles_buffer,
-            vertices_buffer: mesh.vertices_buffer,
-        }
+        triangles_group
     }
 
     pub fn gpu(&self) -> &GPU {
@@ -115,7 +123,7 @@ impl Renderer for Tracer {
         self.elapsed_time = elapses_time;
     }
 
-    fn render(&self, texture: &Texture) {
+    fn render(&self, texture: &wgpu::Texture) {
         let mut encoder = self.gpu.device.create_command_encoder(&Default::default());
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             color_attachments: &[
@@ -136,7 +144,7 @@ impl Renderer for Tracer {
         });
         let t = (self.elapsed_time.as_millis() & 0x7FFFFFFF) as u32;
         pass.set_pipeline(&self.gpu_pipeline);
-        pass.set_bind_group(0, &self.triangles.triangles_group, &[]);
+        pass.set_bind_group(0, &self.triangles_group, &[]);
         pass.draw(0..3, t..(t + 1));
         drop(pass);
         self.gpu.queue.submit(Some(encoder.finish()));

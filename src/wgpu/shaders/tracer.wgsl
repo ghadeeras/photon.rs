@@ -173,6 +173,7 @@ fn interpolate(hit: vec4<f32>, t: Triangle) -> Vertex {
     let v1 = vertices[t.corners[1]];
     let v2 = vertices[t.corners[2]];
     let n = normalize(w0 * v0.normal + w1 * v1.normal + w2 * v2.normal);
+//    let n = vec3(t.as_matrix[0].z, t.as_matrix[1].z, t.as_matrix[2].z);
     let c = w0 * v0.color  + w1 * v1.color  + w2 * v2.color;
     return Vertex(n, c);
 }
