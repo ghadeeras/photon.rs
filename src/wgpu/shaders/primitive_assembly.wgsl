@@ -22,9 +22,7 @@ fn calc_triangle(triangle_index: u32) -> mat4x4<f32> {
     let is = vertex_indices(triangle_index);
     let t = get_triangle(is);
     var m = triangle_as_matrix(t);
-    m[0].w = bitcast<f32>(is.x);
-    m[1].w = bitcast<f32>(is.y);
-    m[2].w = bitcast<f32>(is.z);
+    m[3] = vec4(bitcast<f32>(is), 1.0);
     return m;
 }
 
@@ -56,13 +54,13 @@ fn triangle_as_matrix(t: mat3x3<f32>) -> mat4x4<f32> {
     let yy = cross(z, x);
 
     let inverse_det = 1.0 / dot(z, zz);
-    let m = inverse_det * transpose(mat3x3(xx, yy, zz));
+    let m = inverse_det * mat3x3(xx, yy, zz);
 
-    let m_3_ = m * (-t[2]);
+    let v = -t[2] * m;
     return mat4x4(
-        vec4(m[0], 0.0),
-        vec4(m[1], 0.0),
-        vec4(m[2], 0.0),
-        vec4(m_3_, 1.0)
+        vec4(     m[0], v.x),
+        vec4(     m[1], v.y),
+        vec4(     m[2], v.z),
+        vec4(vec3(0.0), 1.0)
     );
 }

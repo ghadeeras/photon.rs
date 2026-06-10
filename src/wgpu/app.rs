@@ -2,9 +2,12 @@ use crate::wgpu::{canvas, gpu};
 use crate::win::app;
 use std::sync::Arc;
 use std::time::Duration;
-use winit::window::Window;
+use winit::window::{Window, WindowAttributes};
 
-pub struct AppFactory<F: RendererFactory>(pub F);
+pub struct AppFactory<F: RendererFactory> {
+    pub name: &'static str,
+    pub renderer_factory: F
+}
 pub struct App<'window, F: RendererFactory> {
     canvas: canvas::Canvas<'window>,
     renderer: F::Output,
@@ -32,13 +35,16 @@ impl<F: RendererFactory> app::AppFactory for AppFactory<F> {
 
     type Output<'window> = App<'window, F>;
 
+    fn window_attributes(&self, default_attributes: WindowAttributes) -> WindowAttributes {
+        default_attributes.with_title(self.name)
+    }
+
     async fn init<'window>(&mut self, window: Window) -> anyhow::Result<Self::Output<'window>> {
         let gpu_instance = wgpu::Instance::new(&Default::default());
         let mut canvas = canvas::Canvas::new(window, &gpu_instance)?;
         let gpu = gpu::GPU::new(gpu_instance, Some(canvas.surface())).await?;
         canvas.reconfigure(&gpu);
-        let Self(ref renderer_factory) = self;
-        let renderer = renderer_factory.new_renderer(gpu, canvas.preferred_format());
+        let renderer = self.renderer_factory.new_renderer(gpu, canvas.preferred_format());
         Ok(Self::Output { canvas, renderer })
     }
 

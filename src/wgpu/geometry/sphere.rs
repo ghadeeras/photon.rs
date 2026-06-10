@@ -1,10 +1,14 @@
-use crate::wgpu::geometry::{Geometry, MeshGenerator, Mesh};
+use crate::wgpu::geometry::{Geometry, Mesh, MeshGenerator};
 use crate::wgpu::gpu::GPU;
 use wgpu::wgt::BufferDescriptor;
 
 pub struct Sphere(wgpu::ComputePipeline);
-pub struct Stacks(pub u16);
+pub struct Tessellation {
+    pub latitudes: u16,
+    pub longitudes: u16,
+}
 
+#[derive(Debug)]
 struct MeshInfo {
     indices_count: u32,
     vertices_count: u32,
@@ -23,11 +27,10 @@ impl Geometry for crate::geometries::Sphere {
 
 impl MeshGenerator for Sphere {
 
-    type Params = Stacks;
+    type Params = Tessellation;
 
-    fn mesh(&self, gpu: &GPU, input: &Self::Params) -> Mesh {
-        let &Stacks(stacks) = input;
-        self.mesh(gpu, stacks)
+    fn mesh(&self, gpu: &GPU, params: &Self::Params) -> Mesh {
+        self.mesh(gpu, params.longitudes, params.latitudes)
     }
 
 }
@@ -47,9 +50,10 @@ impl Sphere {
         Sphere(gpu_pipeline)
     }
 
-    fn mesh(&self, gpu: &GPU, stacks: u16) -> Mesh {
+    fn mesh(&self, gpu: &GPU, longitudes: u16, latitudes: u16) -> Mesh {
         let &Sphere(ref gpu_pipeline) = self;
-        let mesh_info = self.mesh_info(stacks);
+        let mesh_info = self.mesh_info(longitudes, latitudes);
+        log::info!("mesh info: {:?}", mesh_info);
         let indices_buffer = Self::buffer(gpu, "Indices Buffer", (mesh_info.indices_count as u64) * 4);
         let positions_buffer = Self::buffer(gpu, "Positions Buffer", (mesh_info.vertices_count as u64) * 4 * 4);
         let vertices_buffer = Self::buffer(gpu, "Vertices Buffer", (mesh_info.vertices_count as u64) * 2 * 4 * 4);
@@ -98,14 +102,14 @@ impl Sphere {
         }
     }
 
-    fn mesh_info(&self, stacks: u16) -> MeshInfo {
-        let stacks_u32 = stacks as u32;
-        let slices_u32 = stacks_u32 * 2;
+    fn mesh_info(&self, longitudes: u16, latitudes: u16) -> MeshInfo {
+        let latitudes_u32 = latitudes as u32;
+        let longitudes_u32 = longitudes.max(latitudes) as u32;
         MeshInfo {
-            indices_count: 6 * slices_u32 * stacks_u32,
-            vertices_count: (slices_u32 + 1) * (stacks_u32 + 1),
-            workgroups_x: (slices_u32 + 1).div_ceil(8),
-            workgroups_y: (stacks_u32 + 1).div_ceil(8),
+            indices_count: 6 * longitudes_u32 * latitudes_u32,
+            vertices_count: (longitudes_u32 + 1) * (latitudes_u32 + 1),
+            workgroups_x: (longitudes_u32 + 1).div_ceil(8),
+            workgroups_y: (latitudes_u32 + 1).div_ceil(8),
         }
     }
 
