@@ -1,12 +1,12 @@
 use crate::wgpu::app::{Renderer, RendererFactory};
+use crate::wgpu::bind_group_entry;
 use crate::wgpu::geometry::{Geometry, MeshGenerator};
 use crate::wgpu::gpu::GPU;
 use crate::wgpu::primitive_assembly::PrimitiveAssembly;
 use std::time::Duration;
 
-pub struct TracerFactory<M: MeshGenerator, G: Geometry<Generator=M>>{
-    pub geometry: G,
-    pub params: M::Params
+pub struct TracerFactory<M: MeshGenerator<Params=()>, G: Geometry<Generator=M>> {
+    pub geometry: G
 }
 
 pub struct Tracer {
@@ -22,16 +22,15 @@ pub struct Triangles {
     pub vertices_buffer: wgpu::Buffer,
 }
 
-impl<M: MeshGenerator, G: Geometry<Generator=M>> RendererFactory for TracerFactory<M, G> {
+impl<M: MeshGenerator<Params=()>, G: Geometry<Generator=M>> RendererFactory for TracerFactory<M, G> {
 
     type Output = Tracer;
 
     fn new_renderer(&self, gpu: GPU, format: wgpu::TextureFormat) -> Self::Output {
-        let &Self { ref geometry, params: ref input } = self;
-        let sphere_gen = geometry.generator(&gpu);
         let assembly = PrimitiveAssembly::new(&gpu);
-        let mesh = sphere_gen.mesh(&gpu, input);
-        let triangles_buffer = assembly.triangles(&gpu, &mesh);
+        let generator = self.geometry.generator(&gpu);
+        let mesh = generator.mesh(&());
+        let triangles_buffer = assembly.triangles(&mesh);
         Tracer::new(gpu, format, Triangles {
             triangles_buffer,
             vertices_buffer: mesh.vertices_buffer,
@@ -88,21 +87,10 @@ impl Tracer {
         let triangles_group = gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: None,
             layout: &gpu_pipeline.get_bind_group_layout(0),
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                    buffer: &triangles.triangles_buffer,
-                    size: None,
-                    offset: 0
-                })
-            }, wgpu::BindGroupEntry {
-                binding: 1,
-                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                    buffer: &triangles.vertices_buffer,
-                    size: None,
-                    offset: 0
-                })
-            }]
+            entries: &[
+                bind_group_entry(0, &triangles.triangles_buffer),
+                bind_group_entry(1, &triangles.vertices_buffer),
+            ]
         });
         triangles_group
     }

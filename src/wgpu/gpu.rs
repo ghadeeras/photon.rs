@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub struct GPU {
     pub instance: wgpu::Instance,
     pub adapter: wgpu::Adapter,

@@ -1,9 +1,15 @@
+use crate::wgpu::bind_group_entry;
 use crate::wgpu::geometry::{Geometry, Mesh, MeshGenerator};
 use crate::wgpu::gpu::GPU;
 use wgpu::wgt::BufferDescriptor;
 
-pub struct Sphere(wgpu::ComputePipeline);
-pub struct Tessellation {
+pub struct Sphere {
+    gpu: GPU,
+    gpu_pipeline: wgpu::ComputePipeline,
+}
+
+#[derive(Clone)]
+pub struct SphereParams {
     pub latitudes: u16,
     pub longitudes: u16,
 }
@@ -27,10 +33,14 @@ impl Geometry for crate::geometries::Sphere {
 
 impl MeshGenerator for Sphere {
 
-    type Params = Tessellation;
+    type Params = SphereParams;
 
-    fn mesh(&self, gpu: &GPU, params: &Self::Params) -> Mesh {
-        self.mesh(gpu, params.longitudes, params.latitudes)
+    fn mesh(&self, params: &Self::Params) -> Mesh {
+        self.mesh(params.longitudes, params.latitudes)
+    }
+
+    fn gpu(&self) -> &GPU {
+        &self.gpu
     }
 
 }
@@ -47,11 +57,14 @@ impl Sphere {
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             cache: None,
         });
-        Sphere(gpu_pipeline)
+        Sphere {
+            gpu: gpu.clone(),
+            gpu_pipeline
+        }
     }
 
-    fn mesh(&self, gpu: &GPU, longitudes: u16, latitudes: u16) -> Mesh {
-        let &Sphere(ref gpu_pipeline) = self;
+    fn mesh(&self, longitudes: u16, latitudes: u16) -> Mesh {
+        let &Sphere { ref gpu_pipeline, ref gpu } = self;
         let mesh_info = self.mesh_info(longitudes, latitudes);
         log::info!("mesh info: {:?}", mesh_info);
         let indices_buffer = Self::buffer(gpu, "Indices Buffer", (mesh_info.indices_count as u64) * 4);
@@ -62,9 +75,9 @@ impl Sphere {
             label: Some("Mesh Group"),
             layout: &mesh_group_layout,
             entries: &[
-                Self::bind_group_entry(0, &indices_buffer),
-                Self::bind_group_entry(1, &positions_buffer),
-                Self::bind_group_entry(2, &vertices_buffer)
+                bind_group_entry(0, &indices_buffer),
+                bind_group_entry(1, &positions_buffer),
+                bind_group_entry(2, &vertices_buffer)
             ]
         });
         let mut encoder = gpu.device.create_command_encoder(&Default::default());
@@ -88,18 +101,6 @@ impl Sphere {
             usage: wgpu::BufferUsages::COPY_SRC.union(wgpu::BufferUsages::COPY_DST).union(wgpu::BufferUsages::STORAGE),
             size,
         })
-    }
-
-    #[allow(clippy::needless_lifetimes)]
-    fn bind_group_entry<'a>(binding: u32, buffer: &'a wgpu::Buffer) -> wgpu::BindGroupEntry<'a> {
-        wgpu::BindGroupEntry {
-            binding,
-            resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                buffer: &&buffer,
-                size: None,
-                offset: 0
-            })
-        }
     }
 
     fn mesh_info(&self, longitudes: u16, latitudes: u16) -> MeshInfo {
