@@ -5,7 +5,7 @@ pub mod canvas;
 pub mod gpu;
 pub mod tracer;
 pub mod primitive_assembly;
-pub mod geometry;
+pub mod meshes;
 pub mod data;
 
 #[allow(clippy::needless_lifetimes)]

@@ -1,6 +1,6 @@
 use crate::wgpu::bind_group_entry;
-use crate::wgpu::geometry::Mesh;
 use crate::wgpu::gpu::GPU;
+use crate::wgpu::meshes::Mesh;
 use wgpu;
 use wgpu::wgt::BufferDescriptor;
 

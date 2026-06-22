@@ -1,6 +1,6 @@
 use crate::wgpu::bind_group_entry;
-use crate::wgpu::geometry::{Geometry, Mesh, MeshGenerator};
 use crate::wgpu::gpu::GPU;
+use crate::wgpu::meshes::{Mesh, MeshGenerator, Meshable};
 use wgpu::wgt::BufferDescriptor;
 
 pub struct Sphere {
@@ -22,7 +22,8 @@ struct MeshInfo {
     workgroups_y: u32,
 }
 
-impl Geometry for crate::geometries::Sphere {
+impl Meshable for crate::geometries::Sphere {
+
     type Generator = Sphere;
 
     fn generator(&self, gpu: &GPU) -> Self::Generator {

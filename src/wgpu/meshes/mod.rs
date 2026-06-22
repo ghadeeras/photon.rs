@@ -4,17 +4,17 @@ use wgpu;
 pub mod sphere;
 pub mod transform;
 
-pub struct ParameterizedGeometry<M: MeshGenerator, G: Geometry<Generator=M>>(
-    pub G,
-    pub M::Params
+pub struct ParameterizedMeshable<G: MeshGenerator, M: Meshable<Generator=G>>(
+    pub M,
+    pub G::Params
 );
 
-pub struct ParameterizedMeshGenerator<M: MeshGenerator> {
-    generator: M,
-    params: M::Params,
+pub struct ParameterizedMeshGenerator<G: MeshGenerator> {
+    generator: G,
+    params: G::Params,
 }
 
-pub trait Geometry {
+pub trait Meshable {
 
     type Generator: MeshGenerator;
 
@@ -38,21 +38,21 @@ pub struct Mesh {
     pub vertices_buffer: wgpu::Buffer,
 }
 
-impl<M: MeshGenerator, G: Geometry<Generator=M>> Geometry for ParameterizedGeometry<M, G> {
+impl<G: MeshGenerator, M: Meshable<Generator=G>> Meshable for ParameterizedMeshable<G, M> {
 
-    type Generator = ParameterizedMeshGenerator<M>;
+    type Generator = ParameterizedMeshGenerator<G>;
 
     fn generator(&self, gpu: &GPU) -> Self::Generator {
-        let &Self(ref geometry, ref params) = self;
+        let &Self(ref meshable, ref params) = self;
         ParameterizedMeshGenerator {
-            generator: geometry.generator(gpu),
+            generator: meshable.generator(gpu),
             params: params.clone(),
         }
     }
 
 }
 
-impl<M: MeshGenerator> MeshGenerator for ParameterizedMeshGenerator<M> {
+impl<G: MeshGenerator> MeshGenerator for ParameterizedMeshGenerator<G> {
 
     type Params = ();
 

@@ -1,24 +1,24 @@
 use crate::transforms::Affine;
 use crate::wgpu::bind_group_entry;
 use crate::wgpu::data::{Data, Writable};
-use crate::wgpu::geometry::{Geometry, Mesh, MeshGenerator};
 use crate::wgpu::gpu::GPU;
+use crate::wgpu::meshes::{Mesh, MeshGenerator, Meshable};
 use wgpu::wgt::BufferDescriptor;
 use wgpu::Buffer;
 
-pub struct TransformedGeometry<M: MeshGenerator, G: Geometry<Generator=M>> {
-    pub geometry: G,
+pub struct TransformedMeshable<G: MeshGenerator, M: Meshable<Generator=G>> {
+    pub meshable: M,
     pub transformation: Affine
 }
 
-pub struct TransformedMeshGenerator<M: MeshGenerator> {
-    generator: M,
+pub struct TransformedMeshGenerator<G: MeshGenerator> {
+    generator: G,
     gpu_pipeline: wgpu::ComputePipeline,
     transformation: Buffer
 }
 
-impl<M: MeshGenerator, G: Geometry<Generator=M>> Geometry for TransformedGeometry<M, G> {
-    type Generator = TransformedMeshGenerator<M>;
+impl<G: MeshGenerator, M: Meshable<Generator=G>> Meshable for TransformedMeshable<G, M> {
+    type Generator = TransformedMeshGenerator<G>;
 
     fn generator(&self, gpu: &GPU) -> Self::Generator {
         let shader = gpu.device.create_shader_module(wgpu::include_wgsl!("../shaders/transform.wgsl"));
@@ -31,7 +31,7 @@ impl<M: MeshGenerator, G: Geometry<Generator=M>> Geometry for TransformedGeometr
             cache: None,
         });
         TransformedMeshGenerator {
-            generator: self.geometry.generator(gpu),
+            generator: self.meshable.generator(gpu),
             gpu_pipeline,
             transformation: self.transformation.to_buffer(gpu),
         }
@@ -39,9 +39,9 @@ impl<M: MeshGenerator, G: Geometry<Generator=M>> Geometry for TransformedGeometr
 
 }
 
-impl<M: MeshGenerator> MeshGenerator for TransformedMeshGenerator<M> {
+impl<G: MeshGenerator> MeshGenerator for TransformedMeshGenerator<G> {
 
-    type Params = M::Params;
+    type Params = G::Params;
 
     fn mesh(&self, input: &Self::Params) -> Mesh {
         let gpu = self.gpu();
@@ -83,7 +83,7 @@ impl Affine {
             size: Affine::padded_size() as u64,
         });
         let mut range = buffer.get_mapped_range_mut(..);
-        range.write(self);
+        Writable::new(&mut range).write(self);
         drop(range);
         buffer.unmap();
         buffer

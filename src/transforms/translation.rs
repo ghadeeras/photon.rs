@@ -8,6 +8,8 @@ pub struct Translation(pub Vec3D);
 
 impl Translation {
 
+    pub const ZERO: Translation = Translation(Vec3D::ZERO);
+
     pub fn new(x: f64, y: f64, z: f64) -> Self {
         Translation(Vec3D::new(x, y, z))
     }
