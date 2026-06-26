@@ -1,4 +1,4 @@
-use crate::wgpu::bind_group_entry;
+use crate::wgpu::bind_group_buffer_entry;
 use crate::wgpu::gpu::GPU;
 use crate::wgpu::meshes::Mesh;
 use wgpu;
@@ -30,6 +30,7 @@ impl PrimitiveAssembly {
     pub fn triangles(&self, mesh: &Mesh) -> wgpu::Buffer {
         let &Self { ref gpu, ref gpu_pipeline } = self;
         let triangles_count = mesh.indices_buffer.size() / (3 * 4);
+        log::info!("triangles count: {:?}", triangles_count);
         let triangles_buffer = gpu.device.create_buffer(&BufferDescriptor {
             label: Some("Triangles Buffer"),
             mapped_at_creation: false,
@@ -41,9 +42,9 @@ impl PrimitiveAssembly {
             label: Some("Triangles Group"),
             layout: &triangles_layout,
             entries: &[
-                bind_group_entry(0, &mesh.indices_buffer),
-                bind_group_entry(1, &mesh.positions_buffer),
-                bind_group_entry(2, &triangles_buffer)
+                bind_group_buffer_entry(0, &mesh.indices_buffer),
+                bind_group_buffer_entry(1, &mesh.positions_buffer),
+                bind_group_buffer_entry(2, &triangles_buffer)
             ]
         });
         let mut encoder = gpu.device.create_command_encoder(&Default::default());

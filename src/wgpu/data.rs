@@ -1,22 +1,24 @@
 use crate::basic::matrices::Matrix;
 use crate::basic::vectors::Vec3D;
 use crate::transforms::{Affine, Linear, Translation};
-use wgpu::BufferViewMut;
-
 
 pub struct Writable<'a> {
-    view: &'a mut BufferViewMut,
+    view: &'a mut [u8],
     index: usize,
 }
 
 impl<'a> Writable<'a> {
 
-    pub fn new(view: &'a mut BufferViewMut) -> Self {
+    pub fn new(view: &'a mut [u8]) -> Self {
         Self { view, index: 0 }
     }
 
     pub fn write<D: Data>(self, data: &D) -> Writable<'a> {
-        data.write(self)
+        let mut index = self.index;
+        let writable = data.write(self);
+        index += D::padded_size();
+        assert!(writable.index <= index);
+        Writable { view: writable.view, index }
     }
 
     fn write_slice(self, data: &[u8]) -> Writable<'a> {
@@ -119,6 +121,30 @@ impl Data for f64 {
 }
 
 impl Data for f32 {
+
+    fn write<'a>(&self, writable: Writable<'a>) -> Writable<'a> {
+        writable.write_slice(&self.to_le_bytes())
+    }
+
+    fn padded_size() -> usize {
+        4
+    }
+
+}
+
+impl Data for u32 {
+
+    fn write<'a>(&self, writable: Writable<'a>) -> Writable<'a> {
+        writable.write_slice(&self.to_le_bytes())
+    }
+
+    fn padded_size() -> usize {
+        4
+    }
+
+}
+
+impl Data for i32 {
 
     fn write<'a>(&self, writable: Writable<'a>) -> Writable<'a> {
         writable.write_slice(&self.to_le_bytes())

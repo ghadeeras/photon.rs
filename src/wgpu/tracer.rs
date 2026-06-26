@@ -1,5 +1,5 @@
 use crate::wgpu::app::{Renderer, RendererFactory};
-use crate::wgpu::bind_group_entry;
+use crate::wgpu::bind_group_buffer_entry;
 use crate::wgpu::gpu::GPU;
 use crate::wgpu::meshes::{MeshGenerator, Meshable};
 use crate::wgpu::primitive_assembly::PrimitiveAssembly;
@@ -89,8 +89,8 @@ impl Tracer {
             label: None,
             layout: &gpu_pipeline.get_bind_group_layout(0),
             entries: &[
-                bind_group_entry(0, &triangles.triangles_buffer),
-                bind_group_entry(1, &triangles.vertices_buffer),
+                bind_group_buffer_entry(0, &triangles.triangles_buffer),
+                bind_group_buffer_entry(1, &triangles.vertices_buffer),
             ]
         });
         triangles_group

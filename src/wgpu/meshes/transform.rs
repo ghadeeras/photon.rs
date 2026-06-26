@@ -1,9 +1,7 @@
 use crate::transforms::Affine;
-use crate::wgpu::bind_group_entry;
-use crate::wgpu::data::{Data, Writable};
 use crate::wgpu::gpu::GPU;
-use crate::wgpu::meshes::{Mesh, MeshGenerator, Meshable};
-use wgpu::wgt::BufferDescriptor;
+use crate::wgpu::meshes::{Mesh, MeshGenerator, MeshSize, MeshView, Meshable};
+use crate::wgpu::{bind_group_buffer_entry, initialized_uniform_buffer};
 use wgpu::Buffer;
 
 pub struct TransformedMeshable<G: MeshGenerator, M: Meshable<Generator=G>> {
@@ -18,6 +16,7 @@ pub struct TransformedMeshGenerator<G: MeshGenerator> {
 }
 
 impl<G: MeshGenerator, M: Meshable<Generator=G>> Meshable for TransformedMeshable<G, M> {
+
     type Generator = TransformedMeshGenerator<G>;
 
     fn generator(&self, gpu: &GPU) -> Self::Generator {
@@ -33,7 +32,7 @@ impl<G: MeshGenerator, M: Meshable<Generator=G>> Meshable for TransformedMeshabl
         TransformedMeshGenerator {
             generator: self.meshable.generator(gpu),
             gpu_pipeline,
-            transformation: self.transformation.to_buffer(gpu),
+            transformation: initialized_uniform_buffer(gpu, "Transformation", &self.transformation),
         }
     }
 
@@ -43,50 +42,38 @@ impl<G: MeshGenerator> MeshGenerator for TransformedMeshGenerator<G> {
 
     type Params = G::Params;
 
-    fn mesh(&self, input: &Self::Params) -> Mesh {
+    fn mesh_size(&self, input: &Self::Params) -> MeshSize {
+        self.generator.mesh_size(input)
+    }
+
+    fn populate_mesh(&self, input: &Self::Params, mesh: &Mesh) -> MeshView {
         let gpu = self.gpu();
         let gpu_pipeline = &self.gpu_pipeline;
-        let mesh = self.generator.mesh(input);
+        let mut mesh_view = self.generator.populate_mesh(input, mesh);
+        let mesh_size = self.mesh_size(input);
         let mesh_group_layout = gpu_pipeline.get_bind_group_layout(0);
         let mesh_group = gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("Transform Group"),
             layout: &mesh_group_layout,
             entries: &[
-                bind_group_entry(0, &self.transformation),
-                bind_group_entry(1, &mesh.positions_buffer),
-                bind_group_entry(2, &mesh.vertices_buffer)
+                bind_group_buffer_entry(0, mesh_view.get_buffer_lazily(self.gpu())),
+                bind_group_buffer_entry(1, &self.transformation),
+                bind_group_buffer_entry(2, &mesh.positions_buffer),
+                bind_group_buffer_entry(3, &mesh.vertices_buffer)
             ]
         });
         let mut encoder = gpu.device.create_command_encoder(&Default::default());
         let mut pass = encoder.begin_compute_pass(&Default::default());
         pass.set_pipeline(gpu_pipeline);
         pass.set_bind_group(0, &mesh_group, &[]);
-        pass.dispatch_workgroups(mesh.positions_buffer.size().div_ceil(4 * 4 * 64) as u32, 1, 1);
+        pass.dispatch_workgroups(mesh_size.vertices_count.div_ceil(64), 1, 1);
         drop(pass);
         gpu.queue.submit(Some(encoder.finish()));
-        mesh
+        mesh_view
     }
 
     fn gpu(&self) -> &GPU {
         self.generator.gpu()
-    }
-
-}
-
-impl Affine {
-
-    fn to_buffer(&self, gpu: &GPU) -> Buffer {
-        let buffer = gpu.device.create_buffer(&BufferDescriptor {
-            label: Some("Transformation"),
-            mapped_at_creation: true,
-            usage: wgpu::BufferUsages::COPY_SRC.union(wgpu::BufferUsages::COPY_DST).union(wgpu::BufferUsages::UNIFORM),
-            size: Affine::padded_size() as u64,
-        });
-        let mut range = buffer.get_mapped_range_mut(..);
-        Writable::new(&mut range).write(self);
-        drop(range);
-        buffer.unmap();
-        buffer
     }
 
 }

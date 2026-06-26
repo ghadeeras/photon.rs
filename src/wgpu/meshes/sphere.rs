@@ -1,7 +1,6 @@
-use crate::wgpu::bind_group_entry;
+use crate::wgpu::bind_group_buffer_entry;
 use crate::wgpu::gpu::GPU;
-use crate::wgpu::meshes::{Mesh, MeshGenerator, Meshable};
-use wgpu::wgt::BufferDescriptor;
+use crate::wgpu::meshes::{Mesh, MeshGenerator, MeshSize, MeshView, Meshable};
 
 pub struct Sphere {
     gpu: GPU,
@@ -16,8 +15,7 @@ pub struct SphereParams {
 
 #[derive(Debug)]
 struct MeshInfo {
-    indices_count: u32,
-    vertices_count: u32,
+    size: MeshSize,
     workgroups_x: u32,
     workgroups_y: u32,
 }
@@ -36,8 +34,13 @@ impl MeshGenerator for Sphere {
 
     type Params = SphereParams;
 
-    fn mesh(&self, params: &Self::Params) -> Mesh {
-        self.mesh(params.longitudes, params.latitudes)
+    fn mesh_size(&self, input: &Self::Params) -> MeshSize {
+        let mesh_info = self.mesh_info(input.longitudes, input.latitudes);
+        mesh_info.size
+    }
+
+    fn populate_mesh(&self, input: &Self::Params, mesh: &Mesh) -> MeshView {
+        self.populate_mesh(input.longitudes, input.latitudes, mesh)
     }
 
     fn gpu(&self) -> &GPU {
@@ -64,21 +67,20 @@ impl Sphere {
         }
     }
 
-    fn mesh(&self, longitudes: u16, latitudes: u16) -> Mesh {
+    fn populate_mesh(&self, longitudes: u16, latitudes: u16, mesh: &Mesh) -> MeshView {
         let &Sphere { ref gpu_pipeline, ref gpu } = self;
         let mesh_info = self.mesh_info(longitudes, latitudes);
         log::info!("mesh info: {:?}", mesh_info);
-        let indices_buffer = Self::buffer(gpu, "Indices Buffer", (mesh_info.indices_count as u64) * 4);
-        let positions_buffer = Self::buffer(gpu, "Positions Buffer", (mesh_info.vertices_count as u64) * 4 * 4);
-        let vertices_buffer = Self::buffer(gpu, "Vertices Buffer", (mesh_info.vertices_count as u64) * 2 * 4 * 4);
+        let mut mesh_view = MeshView::new(&mesh.offset_size, &mesh_info.size);
         let mesh_group_layout = gpu_pipeline.get_bind_group_layout(0);
         let mesh_group = gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("Mesh Group"),
             layout: &mesh_group_layout,
             entries: &[
-                bind_group_entry(0, &indices_buffer),
-                bind_group_entry(1, &positions_buffer),
-                bind_group_entry(2, &vertices_buffer)
+                bind_group_buffer_entry(0, mesh_view.get_buffer_lazily(self.gpu())),
+                bind_group_buffer_entry(1, &mesh.indices_buffer),
+                bind_group_buffer_entry(2, &mesh.positions_buffer),
+                bind_group_buffer_entry(3, &mesh.vertices_buffer)
             ]
         });
         let mut encoder = gpu.device.create_command_encoder(&Default::default());
@@ -88,28 +90,17 @@ impl Sphere {
         pass.dispatch_workgroups(mesh_info.workgroups_x, mesh_info.workgroups_y, 1);
         drop(pass);
         gpu.queue.submit(Some(encoder.finish()));
-        Mesh {
-            indices_buffer,
-            positions_buffer,
-            vertices_buffer,
-        }
-    }
-
-    fn buffer(gpu: &GPU, label: &str, size: u64) -> wgpu::Buffer {
-        gpu.device.create_buffer(&BufferDescriptor {
-            label: Some(label),
-            mapped_at_creation: false,
-            usage: wgpu::BufferUsages::COPY_SRC.union(wgpu::BufferUsages::COPY_DST).union(wgpu::BufferUsages::STORAGE),
-            size,
-        })
+        mesh_view
     }
 
     fn mesh_info(&self, longitudes: u16, latitudes: u16) -> MeshInfo {
         let latitudes_u32 = latitudes as u32;
         let longitudes_u32 = longitudes.max(latitudes) as u32;
         MeshInfo {
-            indices_count: 6 * longitudes_u32 * latitudes_u32,
-            vertices_count: (longitudes_u32 + 1) * (latitudes_u32 + 1),
+            size: MeshSize {
+                indices_count: 6 * longitudes_u32 * latitudes_u32,
+                vertices_count: (longitudes_u32 + 1) * (latitudes_u32 + 1),
+            },
             workgroups_x: (longitudes_u32 + 1).div_ceil(8),
             workgroups_y: (latitudes_u32 + 1).div_ceil(8),
         }

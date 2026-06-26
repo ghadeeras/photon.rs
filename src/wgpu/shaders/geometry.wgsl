@@ -1,6 +1,13 @@
 const pi = 4.0 * atan(1.0);
 const two_pi = 2.0 * pi;
 
+struct MeshView {
+    first_index: u32,
+    first_vertex: u32,
+    indices_count: u32,
+    vertices_count: u32,
+}
+
 struct Vertex {
     normal: vec3f,
     color: vec3f,
@@ -18,12 +25,15 @@ struct VertexAndPos {
 }
 
 @group(0) @binding(0)
-var<storage, read_write> indices: array<u32>;
+var<uniform> mesh_view: MeshView;
 
 @group(0) @binding(1)
-var<storage, read_write> positions: array<vec3f>;
+var<storage, read_write> indices: array<u32>;
 
 @group(0) @binding(2)
+var<storage, read_write> positions: array<vec3f>;
+
+@group(0) @binding(3)
 var<storage, read_write> vertices: array<Vertex>;
 
 @compute
@@ -49,8 +59,8 @@ fn sphere_vertex(location: VertexLocation) -> VertexAndPos {
 }
 
 fn current_location(id: vec3<u32>) -> VertexLocation {
-    let quads_count = f32(arrayLength(&indices) / 6u);
-    let vertices_count = f32(min(arrayLength(&positions), arrayLength(&vertices)));
+    let quads_count = f32(mesh_view.indices_count / 6u);
+    let vertices_count = f32(mesh_view.vertices_count);
     let b = 0.5 * (quads_count - vertices_count + 1.0);
     let delta = b * b - quads_count;
     if (delta < 0.0) {
@@ -62,12 +72,12 @@ fn current_location(id: vec3<u32>) -> VertexLocation {
 }
 
 fn output(location: VertexLocation, position: vec3f, vertex: Vertex) {
-    let i = location.id.y * (location.max.x + 1u) + location.id.x;
+    let i = mesh_view.first_vertex + location.id.y * (location.max.x + 1u) + location.id.x;
     positions[i] = position;
     vertices[i] = vertex;
 
     let x_size = location.max.x * 6u;
-    let quad_base = location.id.y * x_size + location.id.x * 6u;
+    let quad_base = mesh_view.first_index + location.id.y * x_size + location.id.x * 6u;
     if (location.id.x < location.max.x && location.id.y < location.max.y) {
         indices[quad_base     ] = i;
         indices[quad_base + 4u] = i;
