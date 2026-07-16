@@ -15,6 +15,7 @@ impl GPU {
             force_fallback_adapter: false,
         }).await?;
         let (gpu_device, gpu_queue) = gpu_adapter.request_device(&Default::default()).await?;
+        log::info!("GPU device limits: {:?}", gpu_device.limits());
         Ok(Self {
             instance: gpu_instance, adapter: gpu_adapter, device: gpu_device, queue: gpu_queue
         })

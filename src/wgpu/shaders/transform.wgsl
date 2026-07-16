@@ -28,7 +28,7 @@ var<storage, read_write> positions: array<vec3f>;
 var<storage, read_write> vertices: array<Vertex>;
 
 @compute
-@workgroup_size(64, 1, 1)
+@workgroup_size(256, 1, 1)
 fn c_main(@builtin(global_invocation_id) id: vec3<u32>) {
     let i = id.x;
     if (i >= mesh_view.vertices_count) {

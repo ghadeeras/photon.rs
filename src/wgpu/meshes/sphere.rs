@@ -101,8 +101,8 @@ impl Sphere {
                 indices_count: 6 * longitudes_u32 * latitudes_u32,
                 vertices_count: (longitudes_u32 + 1) * (latitudes_u32 + 1),
             },
-            workgroups_x: (longitudes_u32 + 1).div_ceil(8),
-            workgroups_y: (latitudes_u32 + 1).div_ceil(8),
+            workgroups_x: (longitudes_u32 + 1).div_ceil(16),
+            workgroups_y: (latitudes_u32 + 1).div_ceil(16),
         }
     }
 

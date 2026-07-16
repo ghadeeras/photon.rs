@@ -8,7 +8,7 @@ var<storage, read> positions: array<vec3f>;
 var<storage, read_write> triangles: array<mat4x4<f32>>;
 
 @compute
-@workgroup_size(64, 1, 1)
+@workgroup_size(256, 1, 1)
 fn c_main(@builtin(global_invocation_id) id: vec3<u32>) {
     let i = id.x;
     let triangles_count = arrayLength(&triangles);

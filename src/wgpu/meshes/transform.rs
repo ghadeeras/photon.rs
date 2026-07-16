@@ -66,7 +66,7 @@ impl<G: MeshGenerator> MeshGenerator for TransformedMeshGenerator<G> {
         let mut pass = encoder.begin_compute_pass(&Default::default());
         pass.set_pipeline(gpu_pipeline);
         pass.set_bind_group(0, &mesh_group, &[]);
-        pass.dispatch_workgroups(mesh_size.vertices_count.div_ceil(64), 1, 1);
+        pass.dispatch_workgroups(mesh_size.vertices_count.div_ceil(256), 1, 1);
         drop(pass);
         gpu.queue.submit(Some(encoder.finish()));
         mesh_view

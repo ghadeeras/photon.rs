@@ -51,7 +51,7 @@ impl PrimitiveAssembly {
         let mut pass = encoder.begin_compute_pass(&Default::default());
         pass.set_pipeline(gpu_pipeline);
         pass.set_bind_group(0, &triangles_group, &[]);
-        pass.dispatch_workgroups(triangles_count.div_ceil(64) as u32, 1, 1);
+        pass.dispatch_workgroups(triangles_count.div_ceil(256) as u32, 1, 1);
         drop(pass);
         gpu.queue.submit(Some(encoder.finish()));
         triangles_buffer
