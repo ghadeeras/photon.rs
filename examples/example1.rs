@@ -53,6 +53,6 @@ pub fn main() {
         .done();
     let time = std::time::SystemTime::now();
     let image = camera.shoot(&world, 16, 0);
-    println!("{:?}", time.elapsed());
+    log::info!("{:?}", time.elapsed());
     image.save("_image_1.png");
 }

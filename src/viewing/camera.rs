@@ -16,7 +16,7 @@ impl Camera {
         let stacked = Image::stack(
             stack_size,
             || self.shoot_linear(world),
-            |counter| println!("Rendered {} frames out of {}", counter, stack_size)
+            |counter| log::info!("Rendered {} frames out of {}", counter, stack_size)
         );
         let bloom = Bloom { half_size: self.bloom_half_size(), depth: bloom_depth };
         bloom.filter(&stacked).to_non_linear_space()

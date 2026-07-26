@@ -94,6 +94,7 @@ fn fractal_noise(depth: u8) -> Fractal<Simple> {
 }
 
 pub fn main() {
+    env_logger::builder().filter_level(log::LevelFilter::Info).init();
     let distance = 100.0;
     let camera = Camera {
         lens: Lens::ideal(30.0),
@@ -151,6 +152,6 @@ pub fn main() {
         .done();
     let time = std::time::SystemTime::now();
     let image = camera.shoot(&world, 16 * 14, 16);
-    println!("{:?}", time.elapsed());
+    log::info!("{:?}", time.elapsed());
     image.save("_image_2.png");
 }
