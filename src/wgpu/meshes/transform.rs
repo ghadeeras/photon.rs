@@ -1,7 +1,7 @@
 use crate::transforms::Affine;
-use crate::wgpu::gpu::GPU;
 use crate::wgpu::meshes::{Mesh, MeshGenerator, MeshSize, MeshView, Meshable};
-use crate::wgpu::{bind_group_buffer_entry, initialized_uniform_buffer};
+use instant_app::wgpu::gpu::GPU;
+use instant_app::wgpu::{bind_group_buffer_entry, initialized_uniform_buffer};
 use wgpu::Buffer;
 
 pub struct TransformedMeshable<G: MeshGenerator, M: Meshable<Generator=G>> {

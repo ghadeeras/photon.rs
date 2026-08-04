@@ -1,6 +1,6 @@
-use crate::wgpu::bind_group_buffer_entry;
-use crate::wgpu::gpu::GPU;
 use crate::wgpu::meshes::Mesh;
+use instant_app::wgpu::bind_group_buffer_entry;
+use instant_app::wgpu::gpu::GPU;
 use wgpu;
 use wgpu::wgt::BufferDescriptor;
 

@@ -1,9 +1,8 @@
 use crate::basic::vectors::Vec3D;
-use crate::wgpu::data::{Data, Writable};
-use crate::wgpu::gpu::GPU;
-use crate::wgpu::{initialized_uniform_buffer, storage_buffer};
+use instant_app::wgpu::data::{Data, Writable};
+use instant_app::wgpu::gpu::GPU;
+use instant_app::wgpu::{initialized_uniform_buffer, storage_buffer};
 use wgpu;
-use wgpu::Buffer;
 
 pub mod sphere;
 pub mod transform;
@@ -38,9 +37,9 @@ pub trait MeshGenerator {
 #[derive(Debug, Clone)]
 pub struct Mesh {
     pub offset_size: MeshSize,
-    pub indices_buffer: Buffer,
-    pub positions_buffer: Buffer,
-    pub vertices_buffer: Buffer,
+    pub indices_buffer: wgpu::Buffer,
+    pub positions_buffer: wgpu::Buffer,
+    pub vertices_buffer: wgpu::Buffer,
 }
 
 #[derive(Debug, Clone)]
@@ -53,7 +52,7 @@ pub struct MeshSize {
 pub struct MeshView {
     offset_size: MeshSize,
     size: MeshSize,
-    buffer: Option<Buffer>
+    buffer: Option<wgpu::Buffer>
 }
 
 impl Mesh {
@@ -124,7 +123,7 @@ impl MeshView {
         view
     }
 
-    pub fn get_buffer_lazily(&mut self, gpu: &GPU) -> &Buffer {
+    pub fn get_buffer_lazily(&mut self, gpu: &GPU) -> &wgpu::Buffer {
         let buffer = initialized_uniform_buffer(gpu, "Mesh View", &*self);
         self.buffer = Some(buffer);
         self.buffer.as_ref().unwrap()
@@ -219,7 +218,7 @@ impl<G: MeshGenerator> MeshGenerator for Vec<G> {
 
 impl Data for MeshView {
 
-    fn write<'a>(&self, writable: Writable<'a>) -> Writable<'a> {
+    fn write(&self, writable: Writable) -> Writable {
         writable
             .write(&self.offset_size.indices_count)
             .write(&self.offset_size.vertices_count)

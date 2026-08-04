@@ -1,14 +1,7 @@
-use crate::wgpu::app::{Renderer, RendererFactory};
-use crate::wgpu::bind_group_buffer_entry;
-use crate::wgpu::gpu::GPU;
-use crate::wgpu::meshes::{MeshGenerator, Meshable};
-use crate::wgpu::primitive_assembly::PrimitiveAssembly;
+use crate::wgpu::app::Renderer;
+use instant_app::wgpu::bind_group_buffer_entry;
+use instant_app::wgpu::gpu::GPU;
 use std::time::Duration;
-
-pub struct TracerFactory<G: MeshGenerator, M: Meshable<Generator=G>> {
-    pub meshable: M,
-    pub params: G::Params,
-}
 
 pub struct Tracer {
     gpu: GPU,
@@ -21,23 +14,6 @@ pub struct Tracer {
 pub struct Triangles {
     pub triangles_buffer: wgpu::Buffer,
     pub vertices_buffer: wgpu::Buffer,
-}
-
-impl<G: MeshGenerator, M: Meshable<Generator=G>> RendererFactory for TracerFactory<G, M> {
-
-    type Output = Tracer;
-
-    fn new_renderer(&self, gpu: GPU, format: wgpu::TextureFormat) -> Self::Output {
-        let assembly = PrimitiveAssembly::new(&gpu);
-        let generator = self.meshable.generator(&gpu);
-        let mesh = generator.mesh(&self.params);
-        let triangles_buffer = assembly.triangles(&mesh);
-        Tracer::new(gpu, format, Triangles {
-            triangles_buffer,
-            vertices_buffer: mesh.vertices_buffer,
-        })
-    }
-
 }
 
 impl Tracer {

@@ -1,47 +1,11 @@
 use crate::basic::matrices::Matrix;
 use crate::basic::vectors::Vec3D;
 use crate::transforms::{Affine, Linear, Translation};
-
-pub struct Writable<'a> {
-    view: &'a mut [u8],
-    index: usize,
-}
-
-impl<'a> Writable<'a> {
-
-    pub fn new(view: &'a mut [u8]) -> Self {
-        Self { view, index: 0 }
-    }
-
-    pub fn write<D: Data>(self, data: &D) -> Writable<'a> {
-        let mut index = self.index;
-        let writable = data.write(self);
-        index += D::padded_size();
-        assert!(writable.index <= index);
-        Writable { view: writable.view, index }
-    }
-
-    fn write_slice(self, data: &[u8]) -> Writable<'a> {
-        let Writable { view, index } = self;
-        let i1 = index;
-        let i2 = index + data.len();
-        view[i1 .. i2].clone_from_slice(data);
-        Writable { view, index: i2 }
-    }
-
-}
-
-pub trait Data {
-
-    fn write<'a>(&self, writable: Writable<'a>) -> Writable<'a>;
-
-    fn padded_size() -> usize;
-
-}
+use instant_app::wgpu::data::{Data, Writable};
 
 impl Data for Affine {
 
-    fn write<'a>(&self, writable: Writable<'a>) -> Writable<'a> {
+    fn write(&self, writable: Writable) -> Writable {
         let &Self(Linear(ref m1, ref m2, _), ref t) = self;
         writable
             .write(m1)
@@ -58,7 +22,7 @@ impl Data for Affine {
 
 impl Data for Matrix {
 
-    fn write<'a>(&self, writable: Writable<'a>) -> Writable<'a> {
+    fn write(&self, writable: Writable) -> Writable {
         writable
             .write(self.x())
             .write(self.y())
@@ -73,7 +37,7 @@ impl Data for Matrix {
 
 impl Data for Translation {
 
-    fn write<'a>(&self, writable: Writable<'a>) -> Writable<'a> {
+    fn write(&self, writable: Writable) -> Writable {
         let &Self(ref t) = self;
         writable.write(t)
     }
@@ -86,7 +50,7 @@ impl Data for Translation {
 
 impl Data for Vec3D {
 
-    fn write<'a>(&self, writable: Writable<'a>) -> Writable<'a> {
+    fn write(&self, writable: Writable) -> Writable {
         self.write(0.0, writable)
     }
 
@@ -98,60 +62,12 @@ impl Data for Vec3D {
 
 impl Vec3D {
 
-    fn write<'a>(&self, w: f64, writable: Writable<'a>) -> Writable<'a> {
+    fn write(&self, w: f64, writable: Writable) -> Writable {
         writable
             .write(&self.x())
             .write(&self.y())
             .write(&self.z())
             .write(&w)
-    }
-
-}
-
-impl Data for f64 {
-
-    fn write<'a>(&self, writable: Writable<'a>) -> Writable<'a> {
-        writable.write(&(*self as f32))
-    }
-
-    fn padded_size() -> usize {
-        f32::padded_size()
-    }
-
-}
-
-impl Data for f32 {
-
-    fn write<'a>(&self, writable: Writable<'a>) -> Writable<'a> {
-        writable.write_slice(&self.to_le_bytes())
-    }
-
-    fn padded_size() -> usize {
-        4
-    }
-
-}
-
-impl Data for u32 {
-
-    fn write<'a>(&self, writable: Writable<'a>) -> Writable<'a> {
-        writable.write_slice(&self.to_le_bytes())
-    }
-
-    fn padded_size() -> usize {
-        4
-    }
-
-}
-
-impl Data for i32 {
-
-    fn write<'a>(&self, writable: Writable<'a>) -> Writable<'a> {
-        writable.write_slice(&self.to_le_bytes())
-    }
-
-    fn padded_size() -> usize {
-        4
     }
 
 }
