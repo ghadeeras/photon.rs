@@ -1,14 +1,13 @@
-use instant_app::run;
 use photon::basic::vectors::Vec3D;
 use photon::geometries::Sphere;
 use photon::transforms::{AffineTransformation, Linear};
-use photon::wgpu::app::AppFactory;
+use photon::wgpu::app::{App, AppConfig};
 use photon::wgpu::meshes::sphere::SphereParams;
 use photon::wgpu::meshes::transform::TransformedMeshable;
 
 fn main() -> anyhow::Result<()> {
     env_logger::init();
-    run(AppFactory {
+    App::run(AppConfig {
         name: "WebGPU-Based Example",
         meshable: vec![
             TransformedMeshable {
