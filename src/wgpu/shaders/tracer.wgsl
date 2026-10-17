@@ -128,7 +128,7 @@ fn sky_color(ray_direction: vec3f) -> vec3f {
 
 fn decode_triangle(i: i32) -> Triangle {
     var compact_t = triangles[i];
-    let corners = bitcast<u32>(compact_t[3].xyz);
+    let corners = bitcast<vec3<u32>>(compact_t[3].xyz);
     compact_t[3] = vec4(vec3(0.0), 1.0);
     return Triangle(compact_t, corners);
 }

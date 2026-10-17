@@ -22,7 +22,7 @@ fn calc_triangle(triangle_index: u32) -> mat4x4<f32> {
     let is = vertex_indices(triangle_index);
     let t = get_triangle(is);
     var m = triangle_as_matrix(t);
-    m[3] = vec4(bitcast<f32>(is), 1.0);
+    m[3] = vec4(bitcast<vec3<f32>>(is), 1.0);
     return m;
 }
 
